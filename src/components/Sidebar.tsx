@@ -1,10 +1,11 @@
-import { FileText, Star, Bell, BookOpen, Trash2, Archive, Hash, Copy, Settings, Plus } from "lucide-react";
+import { FileText, Star, Bell, BookOpen, Trash2, Archive, Hash, Copy, Settings, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface SidebarProps {
   activeSection: string;
   onSectionChange: (section: string) => void;
   noteCounts: Record<string, number>;
+  onClose?: () => void;
 }
 
 const navItems = [
@@ -16,18 +17,28 @@ const navItems = [
   { id: "archive", label: "Archive", icon: Archive },
 ];
 
-export const Sidebar = ({ activeSection, onSectionChange, noteCounts }: SidebarProps) => {
+export const Sidebar = ({ activeSection, onSectionChange, noteCounts, onClose }: SidebarProps) => {
   return (
-    <aside className="w-[200px] h-screen bg-sidebar flex flex-col border-r border-border">
+    <aside className="w-[200px] h-full bg-sidebar flex flex-col border-r border-border">
       {/* Logo */}
       <div className="flex items-center gap-2 px-4 py-4">
         <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center">
           <span className="text-primary-foreground text-xs font-bold">N</span>
         </div>
         <span className="text-foreground font-semibold">Notesnook</span>
-        <button className="ml-auto text-muted-foreground hover:text-foreground transition-colors">
-          <Settings className="w-4 h-4" />
-        </button>
+        <div className="ml-auto flex items-center gap-1">
+          <button className="text-muted-foreground hover:text-foreground transition-colors p-1">
+            <Settings className="w-4 h-4" />
+          </button>
+          {onClose && (
+            <button 
+              onClick={onClose}
+              className="md:hidden text-muted-foreground hover:text-foreground transition-colors p-1"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Quick Actions */}
@@ -55,7 +66,7 @@ export const Sidebar = ({ activeSection, onSectionChange, noteCounts }: SidebarP
               key={item.id}
               onClick={() => onSectionChange(item.id)}
               className={cn(
-                "w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-all duration-200",
+                "w-full flex items-center gap-3 px-3 py-2.5 rounded-md text-sm transition-all duration-200",
                 isActive
                   ? "bg-primary text-primary-foreground shadow-sm"
                   : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"

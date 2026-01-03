@@ -11,9 +11,6 @@ import {
   Bold, 
   Italic, 
   Underline as UnderlineIcon, 
-  MoreVertical, 
-  Plus, 
-  Minus,
   List,
   ListOrdered,
   Link as LinkIcon,
@@ -27,18 +24,16 @@ import {
   Search,
   X,
   Maximize2,
-  Grid3X3,
   Star,
   Trash2,
   Strikethrough,
   Code,
   Quote,
-  Heading1,
-  Heading2,
-  Heading3,
-  Type
+  Type,
+  ChevronLeft,
+  MoreVertical
 } from "lucide-react";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import {
   DropdownMenu,
@@ -61,6 +56,7 @@ interface NoteEditorProps {
   onClose: () => void;
   onToggleFavorite: (id: string) => void;
   onDelete: (id: string) => void;
+  onBack?: () => void;
 }
 
 const fontSizes = ['12px', '14px', '16px', '18px', '20px', '24px', '28px', '32px'];
@@ -117,13 +113,13 @@ const Toolbar = ({ editor, fontSize, setFontSize }: ToolbarProps) => {
   };
 
   return (
-    <div className="flex items-center gap-1 px-4 py-2 bg-toolbar border-b border-border flex-wrap">
+    <div className="flex items-center gap-0.5 md:gap-1 px-2 md:px-4 py-2 bg-toolbar border-b border-border overflow-x-auto scrollbar-none">
       {/* Undo/Redo */}
       <button 
         onClick={() => editor.chain().focus().undo().run()}
         disabled={!editor.can().undo()}
         className={cn(
-          "p-1.5 rounded transition-colors",
+          "p-2 md:p-1.5 rounded transition-colors flex-shrink-0",
           editor.can().undo() 
             ? "text-muted-foreground hover:text-foreground hover:bg-muted" 
             : "text-muted-foreground/30"
@@ -136,7 +132,7 @@ const Toolbar = ({ editor, fontSize, setFontSize }: ToolbarProps) => {
         onClick={() => editor.chain().focus().redo().run()}
         disabled={!editor.can().redo()}
         className={cn(
-          "p-1.5 rounded transition-colors",
+          "p-2 md:p-1.5 rounded transition-colors flex-shrink-0",
           editor.can().redo() 
             ? "text-muted-foreground hover:text-foreground hover:bg-muted" 
             : "text-muted-foreground/30"
@@ -146,13 +142,13 @@ const Toolbar = ({ editor, fontSize, setFontSize }: ToolbarProps) => {
         <Redo className="w-4 h-4" />
       </button>
       
-      <div className="w-px h-5 bg-border mx-1" />
+      <div className="w-px h-5 bg-border mx-1 flex-shrink-0" />
 
       {/* Text formatting */}
       <button 
         onClick={() => editor.chain().focus().toggleBold().run()}
         className={cn(
-          "p-1.5 rounded transition-colors",
+          "p-2 md:p-1.5 rounded transition-colors flex-shrink-0",
           editor.isActive('bold') 
             ? "bg-primary/20 text-primary" 
             : "text-muted-foreground hover:text-foreground hover:bg-muted"
@@ -164,7 +160,7 @@ const Toolbar = ({ editor, fontSize, setFontSize }: ToolbarProps) => {
       <button 
         onClick={() => editor.chain().focus().toggleItalic().run()}
         className={cn(
-          "p-1.5 rounded transition-colors",
+          "p-2 md:p-1.5 rounded transition-colors flex-shrink-0",
           editor.isActive('italic') 
             ? "bg-primary/20 text-primary" 
             : "text-muted-foreground hover:text-foreground hover:bg-muted"
@@ -176,7 +172,7 @@ const Toolbar = ({ editor, fontSize, setFontSize }: ToolbarProps) => {
       <button 
         onClick={() => editor.chain().focus().toggleUnderline().run()}
         className={cn(
-          "p-1.5 rounded transition-colors",
+          "p-2 md:p-1.5 rounded transition-colors flex-shrink-0",
           editor.isActive('underline') 
             ? "bg-primary/20 text-primary" 
             : "text-muted-foreground hover:text-foreground hover:bg-muted"
@@ -188,7 +184,7 @@ const Toolbar = ({ editor, fontSize, setFontSize }: ToolbarProps) => {
       <button 
         onClick={() => editor.chain().focus().toggleStrike().run()}
         className={cn(
-          "p-1.5 rounded transition-colors",
+          "p-2 md:p-1.5 rounded transition-colors flex-shrink-0 hidden md:block",
           editor.isActive('strike') 
             ? "bg-primary/20 text-primary" 
             : "text-muted-foreground hover:text-foreground hover:bg-muted"
@@ -200,7 +196,7 @@ const Toolbar = ({ editor, fontSize, setFontSize }: ToolbarProps) => {
       <button 
         onClick={() => editor.chain().focus().toggleCode().run()}
         className={cn(
-          "p-1.5 rounded transition-colors",
+          "p-2 md:p-1.5 rounded transition-colors flex-shrink-0 hidden md:block",
           editor.isActive('code') 
             ? "bg-primary/20 text-primary" 
             : "text-muted-foreground hover:text-foreground hover:bg-muted"
@@ -210,12 +206,12 @@ const Toolbar = ({ editor, fontSize, setFontSize }: ToolbarProps) => {
         <Code className="w-4 h-4" />
       </button>
 
-      <div className="w-px h-5 bg-border mx-1" />
+      <div className="w-px h-5 bg-border mx-1 flex-shrink-0 hidden md:block" />
 
-      {/* Font Size */}
+      {/* Font Size - Hidden on mobile */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <button className="px-2 py-1 text-sm text-muted-foreground hover:text-foreground hover:bg-muted rounded transition-colors flex items-center gap-1 min-w-[60px]">
+          <button className="px-2 py-1.5 text-sm text-muted-foreground hover:text-foreground hover:bg-muted rounded transition-colors flex-shrink-0 items-center gap-1 min-w-[50px] hidden md:flex">
             {fontSize}
             <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -235,12 +231,12 @@ const Toolbar = ({ editor, fontSize, setFontSize }: ToolbarProps) => {
         </DropdownMenuContent>
       </DropdownMenu>
 
-      {/* Heading/Paragraph */}
+      {/* Heading/Paragraph - Hidden on mobile */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <button className="px-2 py-1 text-sm text-muted-foreground hover:text-foreground hover:bg-muted rounded transition-colors flex items-center gap-1">
+          <button className="px-2 py-1.5 text-sm text-muted-foreground hover:text-foreground hover:bg-muted rounded transition-colors flex-shrink-0 items-center gap-1 hidden md:flex">
             <Type className="w-4 h-4 mr-1" />
-            Paragraph
+            <span className="hidden lg:inline">Paragraph</span>
             <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
             </svg>
@@ -264,10 +260,10 @@ const Toolbar = ({ editor, fontSize, setFontSize }: ToolbarProps) => {
         </DropdownMenuContent>
       </DropdownMenu>
 
-      {/* Font Family */}
+      {/* Font Family - Hidden on mobile */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <button className="px-2 py-1 text-sm text-muted-foreground hover:text-foreground hover:bg-muted rounded transition-colors flex items-center gap-1">
+          <button className="px-2 py-1.5 text-sm text-muted-foreground hover:text-foreground hover:bg-muted rounded transition-colors flex-shrink-0 items-center gap-1 hidden lg:flex">
             Sans-serif
             <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -286,13 +282,13 @@ const Toolbar = ({ editor, fontSize, setFontSize }: ToolbarProps) => {
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <div className="w-px h-5 bg-border mx-1" />
+      <div className="w-px h-5 bg-border mx-1 flex-shrink-0" />
 
       {/* Text Align */}
       <button 
         onClick={() => editor.chain().focus().setTextAlign('left').run()}
         className={cn(
-          "p-1.5 rounded transition-colors",
+          "p-2 md:p-1.5 rounded transition-colors flex-shrink-0",
           editor.isActive({ textAlign: 'left' }) 
             ? "bg-primary/20 text-primary" 
             : "text-muted-foreground hover:text-foreground hover:bg-muted"
@@ -304,7 +300,7 @@ const Toolbar = ({ editor, fontSize, setFontSize }: ToolbarProps) => {
       <button 
         onClick={() => editor.chain().focus().setTextAlign('center').run()}
         className={cn(
-          "p-1.5 rounded transition-colors",
+          "p-2 md:p-1.5 rounded transition-colors flex-shrink-0 hidden md:block",
           editor.isActive({ textAlign: 'center' }) 
             ? "bg-primary/20 text-primary" 
             : "text-muted-foreground hover:text-foreground hover:bg-muted"
@@ -316,7 +312,7 @@ const Toolbar = ({ editor, fontSize, setFontSize }: ToolbarProps) => {
       <button 
         onClick={() => editor.chain().focus().setTextAlign('right').run()}
         className={cn(
-          "p-1.5 rounded transition-colors",
+          "p-2 md:p-1.5 rounded transition-colors flex-shrink-0 hidden md:block",
           editor.isActive({ textAlign: 'right' }) 
             ? "bg-primary/20 text-primary" 
             : "text-muted-foreground hover:text-foreground hover:bg-muted"
@@ -328,7 +324,7 @@ const Toolbar = ({ editor, fontSize, setFontSize }: ToolbarProps) => {
       <button 
         onClick={() => editor.chain().focus().setTextAlign('justify').run()}
         className={cn(
-          "p-1.5 rounded transition-colors",
+          "p-2 md:p-1.5 rounded transition-colors flex-shrink-0 hidden lg:block",
           editor.isActive({ textAlign: 'justify' }) 
             ? "bg-primary/20 text-primary" 
             : "text-muted-foreground hover:text-foreground hover:bg-muted"
@@ -338,13 +334,13 @@ const Toolbar = ({ editor, fontSize, setFontSize }: ToolbarProps) => {
         <AlignJustify className="w-4 h-4" />
       </button>
 
-      <div className="w-px h-5 bg-border mx-1" />
+      <div className="w-px h-5 bg-border mx-1 flex-shrink-0" />
 
       {/* Lists */}
       <button 
         onClick={() => editor.chain().focus().toggleBulletList().run()}
         className={cn(
-          "p-1.5 rounded transition-colors",
+          "p-2 md:p-1.5 rounded transition-colors flex-shrink-0",
           editor.isActive('bulletList') 
             ? "bg-primary/20 text-primary" 
             : "text-muted-foreground hover:text-foreground hover:bg-muted"
@@ -356,7 +352,7 @@ const Toolbar = ({ editor, fontSize, setFontSize }: ToolbarProps) => {
       <button 
         onClick={() => editor.chain().focus().toggleOrderedList().run()}
         className={cn(
-          "p-1.5 rounded transition-colors",
+          "p-2 md:p-1.5 rounded transition-colors flex-shrink-0 hidden md:block",
           editor.isActive('orderedList') 
             ? "bg-primary/20 text-primary" 
             : "text-muted-foreground hover:text-foreground hover:bg-muted"
@@ -366,13 +362,13 @@ const Toolbar = ({ editor, fontSize, setFontSize }: ToolbarProps) => {
         <ListOrdered className="w-4 h-4" />
       </button>
 
-      <div className="w-px h-5 bg-border mx-1" />
+      <div className="w-px h-5 bg-border mx-1 flex-shrink-0 hidden md:block" />
 
-      {/* Blockquote & Link */}
+      {/* Blockquote & Link - Hidden on small screens */}
       <button 
         onClick={() => editor.chain().focus().toggleBlockquote().run()}
         className={cn(
-          "p-1.5 rounded transition-colors",
+          "p-2 md:p-1.5 rounded transition-colors flex-shrink-0 hidden md:block",
           editor.isActive('blockquote') 
             ? "bg-primary/20 text-primary" 
             : "text-muted-foreground hover:text-foreground hover:bg-muted"
@@ -384,7 +380,7 @@ const Toolbar = ({ editor, fontSize, setFontSize }: ToolbarProps) => {
       <button 
         onClick={setLink}
         className={cn(
-          "p-1.5 rounded transition-colors",
+          "p-2 md:p-1.5 rounded transition-colors flex-shrink-0 hidden md:block",
           editor.isActive('link') 
             ? "bg-primary/20 text-primary" 
             : "text-muted-foreground hover:text-foreground hover:bg-muted"
@@ -393,11 +389,42 @@ const Toolbar = ({ editor, fontSize, setFontSize }: ToolbarProps) => {
       >
         <LinkIcon className="w-4 h-4" />
       </button>
+
+      {/* More options dropdown for mobile */}
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button className="p-2 md:hidden rounded transition-colors text-muted-foreground hover:text-foreground hover:bg-muted flex-shrink-0">
+            <MoreVertical className="w-4 h-4" />
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-48">
+          <DropdownMenuItem onClick={() => editor.chain().focus().toggleStrike().run()}>
+            <Strikethrough className="w-4 h-4 mr-2" />
+            Strikethrough
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => editor.chain().focus().toggleCode().run()}>
+            <Code className="w-4 h-4 mr-2" />
+            Code
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => editor.chain().focus().toggleOrderedList().run()}>
+            <ListOrdered className="w-4 h-4 mr-2" />
+            Numbered List
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => editor.chain().focus().toggleBlockquote().run()}>
+            <Quote className="w-4 h-4 mr-2" />
+            Quote
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={setLink}>
+            <LinkIcon className="w-4 h-4 mr-2" />
+            Add Link
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
     </div>
   );
 };
 
-export const NoteEditor = ({ note, onNoteChange, onClose, onToggleFavorite, onDelete }: NoteEditorProps) => {
+export const NoteEditor = ({ note, onNoteChange, onClose, onToggleFavorite, onDelete, onBack }: NoteEditorProps) => {
   const [title, setTitle] = useState(note?.title || "");
   const [tagInput, setTagInput] = useState("");
   const [tags, setTags] = useState<string[]>(note?.tags || []);
@@ -430,7 +457,7 @@ export const NoteEditor = ({ note, onNoteChange, onClose, onToggleFavorite, onDe
     content: note?.content || '',
     editorProps: {
       attributes: {
-        class: 'prose prose-invert max-w-none focus:outline-none min-h-[400px] text-foreground',
+        class: 'prose prose-invert max-w-none focus:outline-none min-h-[200px] md:min-h-[400px] text-foreground',
       },
     },
     onUpdate: ({ editor }) => {
@@ -488,7 +515,7 @@ export const NoteEditor = ({ note, onNoteChange, onClose, onToggleFavorite, onDe
 
   if (!note) {
     return (
-      <div className="flex-1 h-screen bg-editor flex flex-col items-center justify-center">
+      <div className="flex-1 h-full bg-editor flex flex-col items-center justify-center">
         <div className="text-center px-8">
           <div className="w-16 h-16 rounded-full bg-muted/50 flex items-center justify-center mx-auto mb-4">
             <CheckSquare className="w-8 h-8 text-muted-foreground" />
@@ -503,51 +530,57 @@ export const NoteEditor = ({ note, onNoteChange, onClose, onToggleFavorite, onDe
   }
 
   return (
-    <div className="flex-1 h-screen bg-editor flex flex-col">
+    <div className="flex-1 h-full bg-editor flex flex-col">
       {/* Tab Bar */}
-      <div className="flex items-center justify-between px-4 py-2 bg-background border-b border-border">
+      <div className="flex items-center justify-between px-2 md:px-4 py-2 bg-background border-b border-border">
         <div className="flex items-center gap-2">
-          <div className="flex items-center gap-2 px-3 py-1.5 bg-muted/50 rounded-md">
+          {/* Back button for mobile */}
+          {onBack && (
+            <button
+              onClick={onBack}
+              className="md:hidden p-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+            >
+              <ChevronLeft className="w-5 h-5" />
+            </button>
+          )}
+          <div className="flex items-center gap-2 px-2 md:px-3 py-1.5 bg-muted/50 rounded-md">
             <div className="w-4 h-4 rounded bg-primary/20 flex items-center justify-center">
               <span className="text-primary text-xs">📄</span>
             </div>
-            <span className="text-sm text-foreground truncate max-w-[150px]">
+            <span className="text-sm text-foreground truncate max-w-[100px] md:max-w-[150px]">
               {title || "Untitled"}
             </span>
             <button 
               onClick={onClose}
-              className="text-muted-foreground hover:text-foreground transition-colors"
+              className="text-muted-foreground hover:text-foreground transition-colors hidden md:block"
             >
               <X className="w-3 h-3" />
             </button>
           </div>
         </div>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-0.5 md:gap-1">
           <button 
             onClick={() => onToggleFavorite(note.id)}
             className={cn(
-              "p-1.5 transition-colors rounded",
+              "p-2 md:p-1.5 transition-colors rounded",
               note.isFavorite 
                 ? "text-primary hover:text-primary/80" 
                 : "text-muted-foreground hover:text-foreground"
             )}
           >
-            <Star className={cn("w-4 h-4", note.isFavorite && "fill-current")} />
+            <Star className={cn("w-5 h-5 md:w-4 md:h-4", note.isFavorite && "fill-current")} />
           </button>
           <button 
             onClick={() => onDelete(note.id)}
-            className="p-1.5 text-muted-foreground hover:text-destructive transition-colors rounded"
+            className="p-2 md:p-1.5 text-muted-foreground hover:text-destructive transition-colors rounded"
           >
-            <Trash2 className="w-4 h-4" />
+            <Trash2 className="w-5 h-5 md:w-4 md:h-4" />
           </button>
-          <div className="w-px h-4 bg-border mx-1" />
-          <button className="p-1.5 text-muted-foreground hover:text-foreground transition-colors">
+          <div className="w-px h-4 bg-border mx-1 hidden md:block" />
+          <button className="p-2 md:p-1.5 text-muted-foreground hover:text-foreground transition-colors hidden md:block">
             <Maximize2 className="w-4 h-4" />
           </button>
-          <button className="p-1.5 text-muted-foreground hover:text-foreground transition-colors">
-            <Grid3X3 className="w-4 h-4" />
-          </button>
-          <button className="p-1.5 text-muted-foreground hover:text-foreground transition-colors">
+          <button className="p-2 md:p-1.5 text-muted-foreground hover:text-foreground transition-colors hidden md:block">
             <Search className="w-4 h-4" />
           </button>
         </div>
@@ -557,18 +590,18 @@ export const NoteEditor = ({ note, onNoteChange, onClose, onToggleFavorite, onDe
       <Toolbar editor={editor} fontSize={fontSize} setFontSize={setFontSize} />
 
       {/* Editor Content */}
-      <div className="flex-1 overflow-y-auto p-6">
+      <div className="flex-1 overflow-y-auto p-4 md:p-6">
         <div className="max-w-3xl mx-auto">
           <input
             type="text"
             placeholder="Note title"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            className="w-full bg-transparent text-4xl font-light text-foreground placeholder:text-muted-foreground/50 focus:outline-none mb-2"
+            className="w-full bg-transparent text-2xl md:text-4xl font-light text-foreground placeholder:text-muted-foreground/50 focus:outline-none mb-2"
           />
           
           {/* Tags */}
-          <div className="flex items-center flex-wrap gap-2 mb-6">
+          <div className="flex items-center flex-wrap gap-2 mb-4 md:mb-6">
             {tags.map((tag) => (
               <span
                 key={tag}
@@ -589,7 +622,7 @@ export const NoteEditor = ({ note, onNoteChange, onClose, onToggleFavorite, onDe
               value={tagInput}
               onChange={(e) => setTagInput(e.target.value)}
               onKeyDown={handleTagKeyDown}
-              className="flex-1 min-w-[100px] bg-transparent text-sm text-muted-foreground placeholder:text-muted-foreground/50 focus:outline-none"
+              className="flex-1 min-w-[100px] bg-transparent text-sm text-muted-foreground placeholder:text-muted-foreground/50 focus:outline-none py-1"
             />
           </div>
           
@@ -604,7 +637,7 @@ export const NoteEditor = ({ note, onNoteChange, onClose, onToggleFavorite, onDe
         </div>
         <div className="flex items-center gap-4">
           <span>{wordCount} words</span>
-          <span>{charCount} chars</span>
+          <span className="hidden md:inline">{charCount} chars</span>
         </div>
       </div>
     </div>

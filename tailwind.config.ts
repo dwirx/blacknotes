@@ -1,5 +1,15 @@
 import type { Config } from "tailwindcss";
 
+// Custom plugin for line-clamp
+const lineClamp = {
+  '.line-clamp-2': {
+    display: '-webkit-box',
+    '-webkit-line-clamp': '2',
+    '-webkit-box-orient': 'vertical',
+    overflow: 'hidden',
+  },
+};
+
 export default {
   darkMode: ["class"],
   content: ["./pages/**/*.{ts,tsx}", "./components/**/*.{ts,tsx}", "./app/**/*.{ts,tsx}", "./src/**/*.{ts,tsx}"],

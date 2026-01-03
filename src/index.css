@@ -51,6 +51,22 @@
   }
 }
 
+/* Hide scrollbar for toolbar */
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
+/* Touch-friendly tap targets */
+@media (max-width: 768px) {
+  .touch-manipulation {
+    touch-action: manipulation;
+  }
+}
+
 @layer base {
   * {
     @apply border-border;
