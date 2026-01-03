@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
+import { ThemeToggle } from "./ThemeToggle";
 
 type SidebarTab = "home" | "notebooks" | "tags";
 
@@ -340,6 +341,7 @@ export const Sidebar = ({
       <div className="px-3 py-2.5 border-t border-border flex items-center gap-2">
         <div className="w-2 h-2 rounded-full bg-primary" />
         <span className="text-xs text-muted-foreground flex-1">Synced</span>
+        <ThemeToggle />
         <button 
           className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
           title="Settings"
