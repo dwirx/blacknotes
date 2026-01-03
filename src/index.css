@@ -238,3 +238,31 @@
 .prose-editor .ProseMirror [style*="text-align: justify"] {
   text-align: justify;
 }
+
+/* KaTeX styles */
+.katex {
+  font-size: 1.1em;
+}
+
+.katex-display {
+  margin: 1em 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+/* Skeleton loading styles */
+.react-loading-skeleton {
+  --base-color: hsl(var(--muted));
+  --highlight-color: hsl(var(--muted-foreground) / 0.1);
+}
+
+/* Drag and drop styles */
+.sortable-ghost {
+  opacity: 0.5;
+}
+
+.sortable-drag {
+  background: hsl(var(--card));
+  border-radius: var(--radius);
+  box-shadow: 0 10px 40px -10px hsl(var(--primary) / 0.3);
+}

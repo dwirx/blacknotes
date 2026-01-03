@@ -468,6 +468,17 @@ const Index = () => {
               searchQuery={searchQuery}
               onSearchChange={setSearchQuery}
               activeSection={activeSection}
+              onReorderNotes={(activeId, overId) => {
+                setNotes((prev) => {
+                  const activeIndex = prev.findIndex(n => n.id === activeId);
+                  const overIndex = prev.findIndex(n => n.id === overId);
+                  if (activeIndex === -1 || overIndex === -1) return prev;
+                  const newNotes = [...prev];
+                  const [removed] = newNotes.splice(activeIndex, 1);
+                  newNotes.splice(overIndex, 0, removed);
+                  return newNotes;
+                });
+              }}
             />
           </div>
 
