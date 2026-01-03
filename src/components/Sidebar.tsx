@@ -90,7 +90,7 @@ export const Sidebar = ({
   );
 
   return (
-    <aside className="w-[200px] h-full bg-sidebar flex flex-col border-r border-border">
+    <aside className="w-full h-full bg-sidebar flex flex-col border-r border-border min-w-0">
       {/* Logo */}
       <div className="flex items-center gap-2 px-3 py-3">
         <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center flex-shrink-0">

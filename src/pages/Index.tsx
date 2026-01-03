@@ -382,30 +382,31 @@ const Index = () => {
   return (
     <div className="flex h-screen overflow-hidden bg-background">
       {/* Mobile Header */}
-      <div className="lg:hidden fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-3 py-2 bg-background border-b border-border">
+      <div className="lg:hidden fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-3 py-2 bg-background border-b border-border safe-area-inset">
         <div className="flex items-center gap-2">
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="p-2 rounded-md text-foreground hover:bg-muted transition-colors"
+            className="p-2 rounded-md text-foreground hover:bg-muted transition-colors active:bg-muted/80"
+            aria-label="Toggle sidebar"
           >
             <Menu className="w-5 h-5" />
           </button>
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1.5">
             <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center">
               <span className="text-primary-foreground text-xs font-bold">N</span>
             </div>
             <span className="font-semibold text-foreground text-sm">Notesnook</span>
           </div>
         </div>
-        <button
-          onClick={() => setNotesListOpen(!notesListOpen)}
-          className={cn(
-            "p-2 rounded-md transition-colors",
-            notesListOpen ? "text-primary bg-primary/10" : "text-foreground hover:bg-muted"
-          )}
-        >
-          {notesListOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-        </button>
+        <div className="flex items-center gap-1">
+          <button
+            onClick={handleAddNote}
+            className="p-2 rounded-md text-primary hover:bg-primary/10 transition-colors"
+            aria-label="Add note"
+          >
+            <Plus className="w-5 h-5" />
+          </button>
+        </div>
       </div>
 
       {/* Sidebar Overlay for Mobile/Tablet */}
@@ -418,7 +419,7 @@ const Index = () => {
 
       {/* Mobile Sidebar */}
       <div className={cn(
-        "lg:hidden fixed z-50 h-full transition-transform duration-300 ease-in-out",
+        "lg:hidden fixed z-50 h-full w-[220px] transition-transform duration-300 ease-in-out bg-sidebar",
         sidebarOpen ? "translate-x-0" : "-translate-x-full"
       )}>
         <Sidebar
@@ -576,19 +577,7 @@ const Index = () => {
       </div>
 
       {/* Mobile/Tablet Content */}
-      <div className="lg:hidden flex-1 flex flex-col pt-14 overflow-hidden min-w-0">
-        {/* Mobile Add Button - Fixed */}
-        <div className="flex items-center gap-2 px-3 py-2 bg-background border-b border-border">
-          <button
-            onClick={handleAddNote}
-            className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground hover:bg-primary/90 transition-colors flex-shrink-0"
-          >
-            <Plus className="w-4 h-4" />
-          </button>
-          <span className="text-xs text-muted-foreground flex-1">
-            {activeSection.charAt(0).toUpperCase() + activeSection.slice(1)}
-          </span>
-        </div>
+      <div className="lg:hidden flex-1 flex flex-col pt-12 overflow-hidden min-w-0">
 
         <div className="flex-1 flex flex-row overflow-hidden">
           {/* Notes List */}
