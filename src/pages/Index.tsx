@@ -4,8 +4,13 @@ import { NotesList } from "@/components/NotesList";
 import { NoteEditor } from "@/components/NoteEditor";
 import { NoteTabs } from "@/components/NoteTabs";
 import { useToast } from "@/hooks/use-toast";
-import { Menu, X } from "lucide-react";
+import { Menu, X, PanelLeftClose, PanelLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
+import {
+  ResizableHandle,
+  ResizablePanel,
+  ResizablePanelGroup,
+} from "@/components/ui/resizable";
 
 type SidebarTab = "home" | "notebooks" | "tags";
 
@@ -44,6 +49,8 @@ const Index = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [notesListOpen, setNotesListOpen] = useState(true);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [notesListCollapsed, setNotesListCollapsed] = useState(false);
   
   // Notebooks state
   const [notebooks, setNotebooks] = useState<Notebook[]>([]);
@@ -409,10 +416,10 @@ const Index = () => {
         />
       )}
 
-      {/* Sidebar */}
+      {/* Mobile Sidebar */}
       <div className={cn(
-        "fixed lg:relative z-50 lg:z-0 h-full transition-transform duration-300 ease-in-out flex-shrink-0",
-        sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+        "lg:hidden fixed z-50 h-full transition-transform duration-300 ease-in-out",
+        sidebarOpen ? "translate-x-0" : "-translate-x-full"
       )}>
         <Sidebar
           activeSection={activeSection}
@@ -432,10 +439,155 @@ const Index = () => {
         />
       </div>
 
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col pt-12 lg:pt-0 overflow-hidden min-w-0">
-        {/* Tabs Bar - Desktop/Tablet */}
-        <div className="hidden md:block">
+      {/* Desktop Layout with Resizable Panels */}
+      <div className="hidden lg:flex flex-1 h-full">
+        <ResizablePanelGroup direction="horizontal" className="h-full">
+          {/* Sidebar Panel */}
+          {!sidebarCollapsed && (
+            <>
+              <ResizablePanel 
+                defaultSize={15} 
+                minSize={10} 
+                maxSize={25}
+                className="min-w-0"
+              >
+                <div className="h-full relative">
+                  <Sidebar
+                    activeSection={activeSection}
+                    onSectionChange={handleSectionChange}
+                    noteCounts={noteCounts}
+                    onClose={() => setSidebarOpen(false)}
+                    activeTab={sidebarTab}
+                    onTabChange={setSidebarTab}
+                    notebooks={notebooks}
+                    tags={displayTags}
+                    selectedNotebookId={selectedNotebookId}
+                    selectedTagId={selectedTagId}
+                    onNotebookSelect={setSelectedNotebookId}
+                    onTagSelect={setSelectedTagId}
+                    onAddNotebook={handleAddNotebook}
+                    onAddTag={handleAddTag}
+                  />
+                  {/* Collapse button */}
+                  <button
+                    onClick={() => setSidebarCollapsed(true)}
+                    className="absolute top-2 right-2 p-1 rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors z-10"
+                    title="Collapse sidebar"
+                  >
+                    <PanelLeftClose className="w-4 h-4" />
+                  </button>
+                </div>
+              </ResizablePanel>
+              <ResizableHandle withHandle className="bg-border hover:bg-primary/50 transition-colors" />
+            </>
+          )}
+
+          {/* Notes List Panel */}
+          {!notesListCollapsed && (
+            <>
+              <ResizablePanel 
+                defaultSize={25} 
+                minSize={15} 
+                maxSize={40}
+                className="min-w-0"
+              >
+                <div className="h-full flex flex-col">
+                  {/* Tabs Bar */}
+                  <NoteTabs
+                    openNotes={openNotes}
+                    activeNoteId={selectedNoteId}
+                    onTabSelect={setSelectedNoteId}
+                    onTabClose={handleTabClose}
+                    onAddNote={handleAddNote}
+                    onNavigateBack={handleNavigateBack}
+                    onNavigateForward={handleNavigateForward}
+                    canGoBack={historyIndex > 0}
+                    canGoForward={historyIndex < noteHistory.length - 1}
+                  />
+                  {/* Notes List */}
+                  <div className="flex-1 overflow-hidden">
+                    <NotesList
+                      notes={filteredNotes}
+                      selectedNoteId={selectedNoteId}
+                      onNoteSelect={handleNoteSelect}
+                      onAddNote={handleAddNote}
+                      onDeleteNote={handleDeleteNote}
+                      onRestoreNote={handleRestoreNote}
+                      onToggleFavorite={handleToggleFavorite}
+                      onArchiveNote={handleArchiveNote}
+                      searchQuery={searchQuery}
+                      onSearchChange={setSearchQuery}
+                      activeSection={activeSection}
+                      onReorderNotes={(activeId, overId) => {
+                        setNotes((prev) => {
+                          const activeIndex = prev.findIndex(n => n.id === activeId);
+                          const overIndex = prev.findIndex(n => n.id === overId);
+                          if (activeIndex === -1 || overIndex === -1) return prev;
+                          const newNotes = [...prev];
+                          const [removed] = newNotes.splice(activeIndex, 1);
+                          newNotes.splice(overIndex, 0, removed);
+                          return newNotes;
+                        });
+                      }}
+                    />
+                  </div>
+                </div>
+              </ResizablePanel>
+              <ResizableHandle withHandle className="bg-border hover:bg-primary/50 transition-colors" />
+            </>
+          )}
+
+          {/* Editor Panel */}
+          <ResizablePanel defaultSize={60} minSize={30} className="min-w-0">
+            <div className="h-full flex flex-col">
+              {/* Show expand buttons when panels are collapsed */}
+              {(sidebarCollapsed || notesListCollapsed) && (
+                <div className="flex items-center gap-1 px-2 py-1 bg-background border-b border-border">
+                  {sidebarCollapsed && (
+                    <button
+                      onClick={() => setSidebarCollapsed(false)}
+                      className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                      title="Show sidebar"
+                    >
+                      <PanelLeft className="w-4 h-4" />
+                    </button>
+                  )}
+                  {notesListCollapsed && (
+                    <button
+                      onClick={() => setNotesListCollapsed(false)}
+                      className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                      title="Show notes list"
+                    >
+                      <Menu className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+              )}
+              <div className="flex-1 overflow-hidden">
+                <NoteEditor
+                  note={selectedNote ? {
+                    id: selectedNote.id,
+                    title: selectedNote.title,
+                    content: selectedNote.content,
+                    tags: selectedNote.tags,
+                    isFavorite: selectedNote.isFavorite,
+                  } : null}
+                  onNoteChange={handleNoteChange}
+                  onClose={handleCloseNote}
+                  onToggleFavorite={handleToggleFavorite}
+                  onDelete={handleDeleteNote}
+                  onBack={() => setNotesListOpen(true)}
+                />
+              </div>
+            </div>
+          </ResizablePanel>
+        </ResizablePanelGroup>
+      </div>
+
+      {/* Mobile/Tablet Content */}
+      <div className="lg:hidden flex-1 flex flex-col pt-12 overflow-hidden min-w-0">
+        {/* Tabs Bar */}
+        <div className="hidden sm:block">
           <NoteTabs
             openNotes={openNotes}
             activeNoteId={selectedNoteId}
@@ -452,7 +604,7 @@ const Index = () => {
         <div className="flex-1 flex flex-row overflow-hidden">
           {/* Notes List */}
           <div className={cn(
-            "transition-all duration-300 ease-in-out overflow-hidden flex-shrink-0 w-full sm:w-[280px] md:w-[300px] lg:w-[320px]",
+            "transition-all duration-300 ease-in-out overflow-hidden flex-shrink-0 w-full sm:w-[280px] md:w-[300px]",
             notesListOpen ? "block" : "hidden",
             selectedNoteId ? "hidden sm:block" : "block"
           )}>
