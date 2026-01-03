@@ -639,6 +639,13 @@ const Index = () => {
                         <button className="p-1 text-muted-foreground hover:text-foreground transition-colors" title="View">
                           <List className="w-3.5 h-3.5" />
                         </button>
+                        <button 
+                          onClick={() => setNotesListCollapsed(true)}
+                          className="p-1 text-muted-foreground hover:text-foreground transition-colors" 
+                          title="Hide Recent"
+                        >
+                          <PanelLeft className="w-3.5 h-3.5" />
+                        </button>
                       </div>
                     </div>
                     {/* Notes List */}
@@ -680,13 +687,14 @@ const Index = () => {
             <div className="h-full flex flex-col">
               {/* Show expand buttons when notes list is collapsed */}
               {notesListCollapsed && (
-                <div className="flex items-center gap-1 px-2 py-1 bg-background border-b border-border">
+                <div className="flex items-center gap-1 px-3 py-2 bg-muted/30 border-b border-border">
                   <button
                     onClick={() => setNotesListCollapsed(false)}
-                    className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-                    title="Show notes list"
+                    className="flex items-center gap-2 px-2 py-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors text-xs"
+                    title="Show Recent notes list"
                   >
-                    <PanelRight className="w-4 h-4" />
+                    <PanelRight className="w-3.5 h-3.5" />
+                    <span>Show Recent</span>
                   </button>
                 </div>
               )}
