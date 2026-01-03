@@ -2,9 +2,14 @@ import { useState, useCallback } from "react";
 import { Sidebar } from "@/components/Sidebar";
 import { NotesList } from "@/components/NotesList";
 import { NoteEditor } from "@/components/NoteEditor";
+import { NoteTabs } from "@/components/NoteTabs";
+import { NotebooksView } from "@/components/NotebooksView";
+import { TagsView } from "@/components/TagsView";
 import { useToast } from "@/hooks/use-toast";
 import { Menu, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+
+type SidebarTab = "home" | "notebooks" | "tags";
 
 interface Note {
   id: string;
@@ -15,15 +20,41 @@ interface Note {
   tags: string[];
   isFavorite: boolean;
   section: string;
+  notebookId?: string;
+}
+
+interface Notebook {
+  id: string;
+  name: string;
+  noteCount: number;
+}
+
+interface Tag {
+  id: string;
+  name: string;
+  noteCount: number;
 }
 
 const Index = () => {
   const [activeSection, setActiveSection] = useState("notes");
+  const [sidebarTab, setSidebarTab] = useState<SidebarTab>("home");
   const [notes, setNotes] = useState<Note[]>([]);
   const [selectedNoteId, setSelectedNoteId] = useState<string | null>(null);
+  const [openNotes, setOpenNotes] = useState<{ id: string; title: string }[]>([]);
+  const [noteHistory, setNoteHistory] = useState<string[]>([]);
+  const [historyIndex, setHistoryIndex] = useState(-1);
   const [searchQuery, setSearchQuery] = useState("");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [notesListOpen, setNotesListOpen] = useState(true);
+  
+  // Notebooks state
+  const [notebooks, setNotebooks] = useState<Notebook[]>([]);
+  const [selectedNotebookId, setSelectedNotebookId] = useState<string | null>(null);
+  
+  // Tags state
+  const [allTags, setAllTags] = useState<Tag[]>([]);
+  const [selectedTagId, setSelectedTagId] = useState<string | null>(null);
+  
   const { toast } = useToast();
 
   const filteredNotes = notes.filter((note) => {
@@ -52,6 +83,21 @@ const Index = () => {
     archive: notes.filter((n) => n.section === "archive").length,
   };
 
+  // Update tag counts from notes
+  const getTagsWithCounts = useCallback(() => {
+    const tagCounts: Record<string, number> = {};
+    notes.forEach(note => {
+      note.tags.forEach(tag => {
+        tagCounts[tag] = (tagCounts[tag] || 0) + 1;
+      });
+    });
+    return Object.entries(tagCounts).map(([name, count], index) => ({
+      id: `tag-${index}`,
+      name,
+      noteCount: count,
+    }));
+  }, [notes]);
+
   const handleAddNote = useCallback(() => {
     const newNote: Note = {
       id: crypto.randomUUID(),
@@ -67,6 +113,19 @@ const Index = () => {
     };
     setNotes((prev) => [newNote, ...prev]);
     setSelectedNoteId(newNote.id);
+    
+    // Add to open tabs
+    setOpenNotes((prev) => {
+      if (!prev.find(n => n.id === newNote.id)) {
+        return [...prev, { id: newNote.id, title: newNote.title || "Untitled" }];
+      }
+      return prev;
+    });
+    
+    // Add to history
+    setNoteHistory(prev => [...prev.slice(0, historyIndex + 1), newNote.id]);
+    setHistoryIndex(prev => prev + 1);
+    
     // On mobile, close notes list when opening editor
     if (window.innerWidth < 768) {
       setNotesListOpen(false);
@@ -75,7 +134,7 @@ const Index = () => {
       title: "Note created",
       description: "New note has been created successfully.",
     });
-  }, [activeSection, toast]);
+  }, [activeSection, toast, historyIndex]);
 
   const handleNoteChange = useCallback((updatedNote: { id: string; title: string; content: string; tags: string[] }) => {
     setNotes((prev) =>
@@ -91,6 +150,13 @@ const Index = () => {
           : note
       )
     );
+    
+    // Update open tabs title
+    setOpenNotes((prev) =>
+      prev.map((n) =>
+        n.id === updatedNote.id ? { ...n, title: updatedNote.title || "Untitled" } : n
+      )
+    );
   }, []);
 
   const handleDeleteNote = useCallback((noteId: string) => {
@@ -99,6 +165,7 @@ const Index = () => {
 
     if (note.section === "trash") {
       setNotes((prev) => prev.filter((n) => n.id !== noteId));
+      setOpenNotes((prev) => prev.filter((n) => n.id !== noteId));
       if (selectedNoteId === noteId) {
         setSelectedNoteId(null);
       }
@@ -167,16 +234,145 @@ const Index = () => {
 
   const handleNoteSelect = useCallback((noteId: string) => {
     setSelectedNoteId(noteId);
+    
+    // Find the note for title
+    const note = notes.find(n => n.id === noteId);
+    
+    // Add to open tabs if not already open
+    setOpenNotes((prev) => {
+      if (!prev.find(n => n.id === noteId)) {
+        return [...prev, { id: noteId, title: note?.title || "Untitled" }];
+      }
+      return prev;
+    });
+    
+    // Add to history
+    setNoteHistory(prev => [...prev.slice(0, historyIndex + 1), noteId]);
+    setHistoryIndex(prev => prev + 1);
+    
     // On mobile, close notes list when selecting a note
     if (window.innerWidth < 768) {
       setNotesListOpen(false);
     }
-  }, []);
+  }, [notes, historyIndex]);
 
   const handleSectionChange = useCallback((section: string) => {
     setActiveSection(section);
     setSidebarOpen(false);
   }, []);
+
+  const handleTabClose = useCallback((noteId: string) => {
+    setOpenNotes((prev) => prev.filter((n) => n.id !== noteId));
+    if (selectedNoteId === noteId) {
+      // Select the previous tab or null
+      const remainingNotes = openNotes.filter(n => n.id !== noteId);
+      if (remainingNotes.length > 0) {
+        setSelectedNoteId(remainingNotes[remainingNotes.length - 1].id);
+      } else {
+        setSelectedNoteId(null);
+      }
+    }
+  }, [openNotes, selectedNoteId]);
+
+  const handleNavigateBack = useCallback(() => {
+    if (historyIndex > 0) {
+      const newIndex = historyIndex - 1;
+      setHistoryIndex(newIndex);
+      setSelectedNoteId(noteHistory[newIndex]);
+    }
+  }, [historyIndex, noteHistory]);
+
+  const handleNavigateForward = useCallback(() => {
+    if (historyIndex < noteHistory.length - 1) {
+      const newIndex = historyIndex + 1;
+      setHistoryIndex(newIndex);
+      setSelectedNoteId(noteHistory[newIndex]);
+    }
+  }, [historyIndex, noteHistory]);
+
+  // Notebook handlers
+  const handleAddNotebook = useCallback(() => {
+    const name = prompt("Enter notebook name:");
+    if (name) {
+      const newNotebook: Notebook = {
+        id: crypto.randomUUID(),
+        name,
+        noteCount: 0,
+      };
+      setNotebooks((prev) => [...prev, newNotebook]);
+      toast({
+        title: "Notebook created",
+        description: `"${name}" has been created.`,
+      });
+    }
+  }, [toast]);
+
+  const handleDeleteNotebook = useCallback((notebookId: string) => {
+    setNotebooks((prev) => prev.filter((n) => n.id !== notebookId));
+    if (selectedNotebookId === notebookId) {
+      setSelectedNotebookId(null);
+    }
+    toast({
+      title: "Notebook deleted",
+      description: "The notebook has been deleted.",
+    });
+  }, [selectedNotebookId, toast]);
+
+  const handleRenameNotebook = useCallback((notebookId: string) => {
+    const notebook = notebooks.find(n => n.id === notebookId);
+    const newName = prompt("Enter new name:", notebook?.name);
+    if (newName) {
+      setNotebooks((prev) =>
+        prev.map((n) =>
+          n.id === notebookId ? { ...n, name: newName } : n
+        )
+      );
+    }
+  }, [notebooks]);
+
+  // Tag handlers
+  const handleAddTag = useCallback(() => {
+    const name = prompt("Enter tag name:");
+    if (name) {
+      const newTag: Tag = {
+        id: crypto.randomUUID(),
+        name,
+        noteCount: 0,
+      };
+      setAllTags((prev) => [...prev, newTag]);
+      toast({
+        title: "Tag created",
+        description: `"${name}" has been created.`,
+      });
+    }
+  }, [toast]);
+
+  const handleDeleteTag = useCallback((tagId: string) => {
+    setAllTags((prev) => prev.filter((t) => t.id !== tagId));
+    if (selectedTagId === tagId) {
+      setSelectedTagId(null);
+    }
+    toast({
+      title: "Tag deleted",
+      description: "The tag has been deleted.",
+    });
+  }, [selectedTagId, toast]);
+
+  const handleRenameTag = useCallback((tagId: string) => {
+    const tag = allTags.find(t => t.id === tagId);
+    const newName = prompt("Enter new name:", tag?.name);
+    if (newName) {
+      setAllTags((prev) =>
+        prev.map((t) =>
+          t.id === tagId ? { ...t, name: newName } : t
+        )
+      );
+    }
+  }, [allTags]);
+
+  // Compute tags from notes
+  const computedTags = getTagsWithCounts();
+  const displayTags = allTags.length > 0 ? allTags : computedTags;
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
@@ -218,51 +414,97 @@ const Index = () => {
           onSectionChange={handleSectionChange}
           noteCounts={noteCounts}
           onClose={() => setSidebarOpen(false)}
+          activeTab={sidebarTab}
+          onTabChange={setSidebarTab}
         />
       </div>
 
+      {/* Secondary Sidebar based on tab */}
+      {sidebarTab === "notebooks" && (
+        <div className="hidden md:block">
+          <NotebooksView
+            notebooks={notebooks}
+            selectedNotebookId={selectedNotebookId}
+            onNotebookSelect={setSelectedNotebookId}
+            onAddNotebook={handleAddNotebook}
+            onDeleteNotebook={handleDeleteNotebook}
+            onRenameNotebook={handleRenameNotebook}
+          />
+        </div>
+      )}
+
+      {sidebarTab === "tags" && (
+        <div className="hidden md:block">
+          <TagsView
+            tags={displayTags}
+            selectedTagId={selectedTagId}
+            onTagSelect={setSelectedTagId}
+            onAddTag={handleAddTag}
+            onDeleteTag={handleDeleteTag}
+            onRenameTag={handleRenameTag}
+          />
+        </div>
+      )}
+
       {/* Main Content */}
-      <div className="flex-1 flex flex-col md:flex-row pt-14 md:pt-0 overflow-hidden">
-        {/* Notes List */}
-        <div className={cn(
-          "md:block transition-all duration-300 ease-in-out overflow-hidden",
-          notesListOpen ? "flex-shrink-0" : "hidden md:hidden",
-          selectedNoteId && window.innerWidth < 768 ? "hidden" : ""
-        )}>
-          <NotesList
-            notes={filteredNotes}
-            selectedNoteId={selectedNoteId}
-            onNoteSelect={handleNoteSelect}
+      <div className="flex-1 flex flex-col pt-14 md:pt-0 overflow-hidden">
+        {/* Tabs Bar - Desktop */}
+        <div className="hidden md:block">
+          <NoteTabs
+            openNotes={openNotes}
+            activeNoteId={selectedNoteId}
+            onTabSelect={setSelectedNoteId}
+            onTabClose={handleTabClose}
             onAddNote={handleAddNote}
-            onDeleteNote={handleDeleteNote}
-            onRestoreNote={handleRestoreNote}
-            onToggleFavorite={handleToggleFavorite}
-            onArchiveNote={handleArchiveNote}
-            searchQuery={searchQuery}
-            onSearchChange={setSearchQuery}
-            activeSection={activeSection}
+            onNavigateBack={handleNavigateBack}
+            onNavigateForward={handleNavigateForward}
+            canGoBack={historyIndex > 0}
+            canGoForward={historyIndex < noteHistory.length - 1}
           />
         </div>
 
-        {/* Note Editor */}
-        <div className={cn(
-          "flex-1 min-w-0",
-          !selectedNoteId && window.innerWidth < 768 ? "hidden md:block" : ""
-        )}>
-          <NoteEditor
-            note={selectedNote ? {
-              id: selectedNote.id,
-              title: selectedNote.title,
-              content: selectedNote.content,
-              tags: selectedNote.tags,
-              isFavorite: selectedNote.isFavorite,
-            } : null}
-            onNoteChange={handleNoteChange}
-            onClose={handleCloseNote}
-            onToggleFavorite={handleToggleFavorite}
-            onDelete={handleDeleteNote}
-            onBack={() => setNotesListOpen(true)}
-          />
+        <div className="flex-1 flex flex-row overflow-hidden">
+          {/* Notes List */}
+          <div className={cn(
+            "md:block transition-all duration-300 ease-in-out overflow-hidden",
+            notesListOpen ? "flex-shrink-0" : "hidden md:hidden",
+            selectedNoteId && window.innerWidth < 768 ? "hidden" : ""
+          )}>
+            <NotesList
+              notes={filteredNotes}
+              selectedNoteId={selectedNoteId}
+              onNoteSelect={handleNoteSelect}
+              onAddNote={handleAddNote}
+              onDeleteNote={handleDeleteNote}
+              onRestoreNote={handleRestoreNote}
+              onToggleFavorite={handleToggleFavorite}
+              onArchiveNote={handleArchiveNote}
+              searchQuery={searchQuery}
+              onSearchChange={setSearchQuery}
+              activeSection={activeSection}
+            />
+          </div>
+
+          {/* Note Editor */}
+          <div className={cn(
+            "flex-1 min-w-0",
+            !selectedNoteId && window.innerWidth < 768 ? "hidden md:block" : ""
+          )}>
+            <NoteEditor
+              note={selectedNote ? {
+                id: selectedNote.id,
+                title: selectedNote.title,
+                content: selectedNote.content,
+                tags: selectedNote.tags,
+                isFavorite: selectedNote.isFavorite,
+              } : null}
+              onNoteChange={handleNoteChange}
+              onClose={handleCloseNote}
+              onToggleFavorite={handleToggleFavorite}
+              onDelete={handleDeleteNote}
+              onBack={() => setNotesListOpen(true)}
+            />
+          </div>
         </div>
       </div>
     </div>
