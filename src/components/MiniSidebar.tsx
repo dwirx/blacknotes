@@ -9,10 +9,10 @@ import {
   Settings, 
   Home, 
   FolderOpen,
-  PanelLeftOpen,
   Menu
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { ThemeToggle } from "./ThemeToggle";
 
 type SidebarTab = "home" | "notebooks" | "tags";
 
@@ -128,6 +128,7 @@ export const MiniSidebar = ({
         <div className="flex items-center gap-1">
           <div className="w-2 h-2 rounded-full bg-primary" />
         </div>
+        <ThemeToggle className="p-2" />
         <button 
           className="p-2 rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
           title="Settings"
