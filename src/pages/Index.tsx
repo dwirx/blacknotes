@@ -1,5 +1,6 @@
 import { useState, useCallback } from "react";
 import { Sidebar } from "@/components/Sidebar";
+import { MiniSidebar } from "@/components/MiniSidebar";
 import { NotesList } from "@/components/NotesList";
 import { NoteEditor } from "@/components/NoteEditor";
 import { NoteTabs } from "@/components/NoteTabs";
@@ -442,6 +443,17 @@ const Index = () => {
 
       {/* Desktop Layout with Resizable Panels */}
       <div className="hidden lg:flex flex-1 h-full">
+        {/* Mini Sidebar when collapsed */}
+        {sidebarCollapsed && (
+          <MiniSidebar
+            activeSection={activeSection}
+            onSectionChange={handleSectionChange}
+            activeTab={sidebarTab}
+            onTabChange={setSidebarTab}
+            onExpand={() => setSidebarCollapsed(false)}
+          />
+        )}
+
         <ResizablePanelGroup direction="horizontal" className="h-full">
           {/* Sidebar Panel */}
           {!sidebarCollapsed && (
@@ -532,27 +544,16 @@ const Index = () => {
           {/* Editor Panel */}
           <ResizablePanel defaultSize={60} minSize={30} className="min-w-0">
             <div className="h-full flex flex-col">
-              {/* Show expand buttons when panels are collapsed */}
-              {(sidebarCollapsed || notesListCollapsed) && (
+              {/* Show expand buttons when notes list is collapsed */}
+              {notesListCollapsed && (
                 <div className="flex items-center gap-1 px-2 py-1 bg-background border-b border-border">
-                  {sidebarCollapsed && (
-                    <button
-                      onClick={() => setSidebarCollapsed(false)}
-                      className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-                      title="Show sidebar"
-                    >
-                      <PanelLeft className="w-4 h-4" />
-                    </button>
-                  )}
-                  {notesListCollapsed && (
-                    <button
-                      onClick={() => setNotesListCollapsed(false)}
-                      className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-                      title="Show notes list"
-                    >
-                      <PanelRight className="w-4 h-4" />
-                    </button>
-                  )}
+                  <button
+                    onClick={() => setNotesListCollapsed(false)}
+                    className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                    title="Show notes list"
+                  >
+                    <PanelRight className="w-4 h-4" />
+                  </button>
                 </div>
               )}
               <div className="flex-1 overflow-hidden">
