@@ -576,27 +576,46 @@ export const NoteEditor = ({ note, onNoteChange, onClose, onToggleFavorite, onDe
       </div>
 
       {/* Status Bar */}
-      <div className="flex items-center justify-between px-4 py-1.5 bg-background border-t border-border text-xs text-muted-foreground">
-        <div className="flex items-center gap-3">
-          <span className="text-primary flex items-center gap-1">
-            <span className="w-1.5 h-1.5 rounded-full bg-primary" />
-            Saved
+      <div className="flex items-center justify-between px-3 py-1 bg-background border-t border-border text-xs text-muted-foreground">
+        <div className="flex items-center gap-2">
+          <span className="flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
           </span>
         </div>
-        <div className="flex items-center gap-4">
-          <span className="hidden sm:inline">100%</span>
-          <span>{wordCount} words</span>
-          <span className="text-muted-foreground">
-            {new Date().toLocaleDateString('en-US', { 
+        <div className="flex items-center gap-3">
+          {/* View mode icons */}
+          <div className="hidden sm:flex items-center gap-1">
+            <button className="p-1 rounded hover:bg-muted transition-colors" title="Preview">
+              <Maximize2 className="w-3.5 h-3.5" />
+            </button>
+          </div>
+          
+          {/* Zoom controls */}
+          <div className="hidden sm:flex items-center gap-1">
+            <button className="p-0.5 rounded hover:bg-muted transition-colors text-muted-foreground hover:text-foreground" title="Zoom out">
+              <span className="text-sm font-medium px-1">−</span>
+            </button>
+            <span className="text-xs min-w-[36px] text-center">100%</span>
+            <button className="p-0.5 rounded hover:bg-muted transition-colors text-muted-foreground hover:text-foreground" title="Zoom in">
+              <span className="text-sm font-medium px-1">+</span>
+            </button>
+          </div>
+          
+          {/* Word count */}
+          <span className="text-muted-foreground">{wordCount} words</span>
+          
+          {/* Date & Time */}
+          <span className="hidden md:inline text-muted-foreground">
+            {new Date().toLocaleDateString('id-ID', { 
+              day: '2-digit',
               month: '2-digit', 
-              day: '2-digit', 
               year: 'numeric' 
-            }).replace(/\//g, '-')} {new Date().toLocaleTimeString([], { 
+            }).replace(/\//g, '-')} {new Date().toLocaleTimeString('id-ID', { 
               hour: '2-digit', 
-              minute: '2-digit' 
-            })}
+              minute: '2-digit',
+              hour12: true
+            }).toUpperCase()}
           </span>
-          <span className="text-primary">✓</span>
         </div>
       </div>
     </div>
