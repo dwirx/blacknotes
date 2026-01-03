@@ -457,6 +457,8 @@ export const NoteEditor = ({ note, onNoteChange, onClose, onToggleFavorite, onDe
         heading: {
           levels: [1, 2, 3],
         },
+        link: false, // Disable default link extension to avoid duplicate
+        underline: false, // Disable default underline extension to avoid duplicate
       }),
       HeadingId.configure({
         types: ['heading'],

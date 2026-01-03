@@ -20,6 +20,7 @@ import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { ThemeToggle } from "./ThemeToggle";
 import { AppSettings } from "./AppSettings";
+import { BlackNotesLogo } from "./BlackNotesLogo";
 
 type SidebarTab = "home" | "notebooks" | "tags";
 
@@ -96,10 +97,9 @@ export const Sidebar = ({
     <aside className="w-full h-full bg-sidebar flex flex-col border-r border-border min-w-0">
       {/* Logo */}
       <div className="flex items-center gap-2 px-3 py-3">
-        <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
-          <span className="text-primary-foreground text-xs font-bold">N</span>
+        <div className="flex-1 min-w-0">
+          <BlackNotesLogo size="sm" />
         </div>
-        <span className="text-foreground font-semibold flex-1 truncate">Notesnook</span>
         <div className="flex items-center gap-0.5 flex-shrink-0">
           {isCollapsible && onCollapse && (
             <button 

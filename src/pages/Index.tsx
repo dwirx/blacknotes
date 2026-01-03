@@ -1,11 +1,13 @@
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useEffect } from "react";
 import { useDebounce } from "@/hooks/useDebounce";
+import { useNotesDB, useNotebooksDB, useTagsDB } from "@/hooks/useDB";
 import { Sidebar } from "@/components/Sidebar";
 import { MiniSidebar } from "@/components/MiniSidebar";
 import { NotesList } from "@/components/NotesList";
 import { NoteEditor } from "@/components/NoteEditor";
 import { NoteTabs } from "@/components/NoteTabs";
 import { AppSettings } from "@/components/AppSettings";
+import { BlackNotesLogo } from "@/components/BlackNotesLogo";
 import { useToast } from "@/hooks/use-toast";
 import { 
   Menu, 
@@ -23,7 +25,8 @@ import {
   Cloud, 
   List, 
   MoreVertical,
-  ArrowUpDown
+  ArrowUpDown,
+  BookOpen
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -40,22 +43,26 @@ interface Note {
   content: string;
   preview: string;
   createdAt: Date;
+  updatedAt?: Date;
   tags: string[];
   isFavorite: boolean;
   section: string;
   notebookId?: string;
+  order?: number;
 }
 
 interface Notebook {
   id: string;
   name: string;
   noteCount: number;
+  createdAt?: Date;
 }
 
 interface Tag {
   id: string;
   name: string;
   noteCount: number;
+  createdAt?: Date;
 }
 
 const Index = () => {
@@ -81,6 +88,64 @@ const Index = () => {
   const [selectedTagId, setSelectedTagId] = useState<string | null>(null);
   
   const { toast } = useToast();
+
+  // IndexedDB hooks
+  const { loadNotes, saveNote, saveNotes, deleteNote: deleteNoteFromDB, isLoading, isSyncing } = useNotesDB();
+  const { loadNotebooks, saveNotebook, deleteNotebook: deleteNotebookFromDB } = useNotebooksDB();
+  const { loadTags, saveTag, deleteTag: deleteTagFromDB } = useTagsDB();
+
+  // Load data from IndexedDB on mount
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const [loadedNotes, loadedNotebooks, loadedTags] = await Promise.all([
+          loadNotes(),
+          loadNotebooks(),
+          loadTags(),
+        ]);
+
+        if (loadedNotes.length > 0) {
+          setNotes(loadedNotes);
+          console.log(`✅ Loaded ${loadedNotes.length} notes from IndexedDB`);
+        }
+
+        if (loadedNotebooks.length > 0) {
+          setNotebooks(loadedNotebooks);
+          console.log(`✅ Loaded ${loadedNotebooks.length} notebooks from IndexedDB`);
+        }
+
+        if (loadedTags.length > 0) {
+          setAllTags(loadedTags);
+          console.log(`✅ Loaded ${loadedTags.length} tags from IndexedDB`);
+        }
+      } catch (error) {
+        console.error('Error loading data:', error);
+      }
+    };
+
+    loadData();
+  }, []);
+
+  // Auto-save notes to IndexedDB when they change
+  useEffect(() => {
+    if (notes.length > 0 && !isLoading) {
+      saveNotes(notes);
+    }
+  }, [notes]);
+
+  // Auto-save notebooks when they change
+  useEffect(() => {
+    if (notebooks.length > 0 && !isLoading) {
+      notebooks.forEach(notebook => saveNotebook(notebook));
+    }
+  }, [notebooks]);
+
+  // Auto-save tags when they change
+  useEffect(() => {
+    if (allTags.length > 0 && !isLoading) {
+      allTags.forEach(tag => saveTag(tag));
+    }
+  }, [allTags]);
 
   // Debounce search query for better performance
   const debouncedSearchQuery = useDebounce(searchQuery, 300);
@@ -135,11 +200,13 @@ const Index = () => {
       content: "",
       preview: "",
       createdAt: new Date(),
+      updatedAt: new Date(),
       tags: [],
       isFavorite: false,
-      section: activeSection === "trash" || activeSection === "archive" || activeSection === "favorites" 
-        ? "notes" 
+      section: activeSection === "trash" || activeSection === "archive" || activeSection === "favorites"
+        ? "notes"
         : activeSection,
+      order: notes.length,
     };
     setNotes((prev) => [newNote, ...prev]);
     setSelectedNoteId(newNote.id);
@@ -416,12 +483,7 @@ const Index = () => {
           >
             <Menu className="w-5 h-5" />
           </button>
-          <div className="flex items-center gap-1.5">
-            <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center">
-              <span className="text-primary-foreground text-xs font-bold">N</span>
-            </div>
-            <span className="font-semibold text-foreground text-sm">Notesnook</span>
-          </div>
+          <BlackNotesLogo size="sm" />
         </div>
         <div className="flex items-center gap-1">
           <button
