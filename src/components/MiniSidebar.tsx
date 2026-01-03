@@ -124,10 +124,12 @@ export const MiniSidebar = ({
       </nav>
 
       {/* Footer */}
-      <div className="flex flex-col items-center gap-2 py-3 border-t border-border">
-        <div className="w-2 h-2 rounded-full bg-primary" />
+      <div className="flex flex-col items-center gap-1 py-2.5 px-1 border-t border-border">
+        <div className="flex items-center gap-1">
+          <div className="w-2 h-2 rounded-full bg-primary" />
+        </div>
         <button 
-          className="p-2.5 rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+          className="p-2 rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
           title="Settings"
         >
           <Settings className="w-4 h-4" />

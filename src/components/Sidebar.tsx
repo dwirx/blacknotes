@@ -336,26 +336,17 @@ export const Sidebar = ({
         </div>
       )}
 
-      {/* Footer - only show on home tab */}
-      {activeTab === "home" && (
-        <div className="px-4 py-3 border-t border-border flex items-center gap-2">
-          <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-          <span className="text-xs text-muted-foreground">Synced</span>
-          <button className="ml-auto text-muted-foreground hover:text-foreground transition-colors">
-            <Settings className="w-4 h-4" />
-          </button>
-        </div>
-      )}
-
-      {/* Sync status for notebooks/tags */}
-      {(activeTab === "notebooks" || activeTab === "tags") && (
-        <div className="px-3 py-2 flex items-center gap-2">
-          <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-          <button className="text-muted-foreground hover:text-foreground transition-colors">
-            <Settings className="w-4 h-4" />
-          </button>
-        </div>
-      )}
+      {/* Footer - consistent for all tabs */}
+      <div className="px-3 py-2.5 border-t border-border flex items-center gap-2">
+        <div className="w-2 h-2 rounded-full bg-primary" />
+        <span className="text-xs text-muted-foreground flex-1">Synced</span>
+        <button 
+          className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+          title="Settings"
+        >
+          <Settings className="w-4 h-4" />
+        </button>
+      </div>
     </aside>
   );
 };
