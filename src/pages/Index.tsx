@@ -1,9 +1,11 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
+import { useDebounce } from "@/hooks/useDebounce";
 import { Sidebar } from "@/components/Sidebar";
 import { MiniSidebar } from "@/components/MiniSidebar";
 import { NotesList } from "@/components/NotesList";
 import { NoteEditor } from "@/components/NoteEditor";
 import { NoteTabs } from "@/components/NoteTabs";
+import { AppSettings } from "@/components/AppSettings";
 import { useToast } from "@/hooks/use-toast";
 import { 
   Menu, 
@@ -80,20 +82,25 @@ const Index = () => {
   
   const { toast } = useToast();
 
-  const filteredNotes = notes.filter((note) => {
-    let matchesSection = false;
-    
-    if (activeSection === "favorites") {
-      matchesSection = note.isFavorite && note.section !== "trash";
-    } else {
-      matchesSection = note.section === activeSection;
-    }
-    
-    const matchesSearch = 
-      note.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      note.content.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesSection && matchesSearch;
-  });
+  // Debounce search query for better performance
+  const debouncedSearchQuery = useDebounce(searchQuery, 300);
+
+  const filteredNotes = useMemo(() => {
+    return notes.filter((note) => {
+      let matchesSection = false;
+
+      if (activeSection === "favorites") {
+        matchesSection = note.isFavorite && note.section !== "trash";
+      } else {
+        matchesSection = note.section === activeSection;
+      }
+
+      const matchesSearch =
+        note.title.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
+        note.content.toLowerCase().includes(debouncedSearchQuery.toLowerCase());
+      return matchesSection && matchesSearch;
+    });
+  }, [notes, activeSection, debouncedSearchQuery]);
 
   const selectedNote = notes.find((n) => n.id === selectedNoteId) || null;
 
@@ -547,27 +554,7 @@ const Index = () => {
 
           {/* Right side - Actions */}
           <div className="flex items-center gap-0.5 px-2 flex-shrink-0 border-l border-border">
-            <button className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded transition-colors" title="Fullscreen">
-              <Maximize2 className="w-4 h-4" />
-            </button>
-            <button className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded transition-colors" title="Undo">
-              <Undo className="w-4 h-4" />
-            </button>
-            <button className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded transition-colors" title="Redo">
-              <Redo className="w-4 h-4" />
-            </button>
-            <button className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded transition-colors" title="Sync">
-              <Cloud className="w-4 h-4" />
-            </button>
-            <button className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded transition-colors" title="List view">
-              <List className="w-4 h-4" />
-            </button>
-            <button className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded transition-colors" title="Search">
-              <Search className="w-4 h-4" />
-            </button>
-            <button className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded transition-colors" title="More options">
-              <MoreVertical className="w-4 h-4" />
-            </button>
+            <AppSettings autoSaveDelay={500} searchDelay={300} />
           </div>
         </div>
 
@@ -712,6 +699,7 @@ const Index = () => {
                   onToggleFavorite={handleToggleFavorite}
                   onDelete={handleDeleteNote}
                   onBack={() => setNotesListOpen(true)}
+                  onAddNote={handleAddNote}
                 />
               </div>
             </div>
@@ -777,6 +765,7 @@ const Index = () => {
                 setSelectedNoteId(null);
                 setNotesListOpen(true);
               }}
+              onAddNote={handleAddNote}
             />
           </div>
         </div>

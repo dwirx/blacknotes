@@ -1,23 +1,25 @@
-import { 
-  FileText, 
-  Star, 
-  Bell, 
-  BookOpen, 
-  Trash2, 
-  Archive, 
-  Hash, 
-  Settings, 
-  X, 
-  Home, 
+import {
+  FileText,
+  Star,
+  Bell,
+  BookOpen,
+  Trash2,
+  Archive,
+  Hash,
+  Settings,
+  X,
+  Home,
   FolderOpen,
   SlidersHorizontal,
   Plus,
   Notebook,
-  PanelLeftClose
+  PanelLeftClose,
+  CheckCircle2
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { ThemeToggle } from "./ThemeToggle";
+import { AppSettings } from "./AppSettings";
 
 type SidebarTab = "home" | "notebooks" | "tags";
 
@@ -338,16 +340,30 @@ export const Sidebar = ({
       )}
 
       {/* Footer - consistent for all tabs */}
-      <div className="px-3 py-2.5 border-t border-border flex items-center gap-2">
-        <div className="w-2 h-2 rounded-full bg-primary" />
-        <span className="text-xs text-muted-foreground flex-1">Synced</span>
-        <ThemeToggle />
-        <button 
-          className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-          title="Settings"
-        >
-          <Settings className="w-4 h-4" />
-        </button>
+      <div className="px-3 py-2.5 border-t border-border bg-sidebar/50 backdrop-blur-sm">
+        {/* Sync Status */}
+        <div className="flex items-center gap-2 mb-2">
+          <div className="flex items-center gap-2 flex-1">
+            <CheckCircle2 className="w-3.5 h-3.5 text-green-500" />
+            <span className="text-xs text-muted-foreground">All changes saved</span>
+          </div>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex items-center gap-1">
+          <ThemeToggle />
+          <AppSettings autoSaveDelay={500} searchDelay={300} />
+
+          {onCollapse && (
+            <button
+              onClick={onCollapse}
+              className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors ml-auto"
+              title="Collapse sidebar"
+            >
+              <PanelLeftClose className="w-4 h-4" />
+            </button>
+          )}
+        </div>
       </div>
     </aside>
   );

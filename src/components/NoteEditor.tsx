@@ -7,10 +7,11 @@ import Placeholder from '@tiptap/extension-placeholder';
 import { TextStyle } from '@tiptap/extension-text-style';
 import FontFamily from '@tiptap/extension-font-family';
 import { FontSize } from '@/lib/tiptap-extensions';
-import { 
-  Bold, 
-  Italic, 
-  Underline as UnderlineIcon, 
+import { HeadingId } from '@/lib/tiptap-heading-id';
+import {
+  Bold,
+  Italic,
+  Underline as UnderlineIcon,
   List,
   ListOrdered,
   Link as LinkIcon,
@@ -38,8 +39,10 @@ import {
   Minus,
   Plus
 } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef, memo } from "react";
 import { cn } from "@/lib/utils";
+import { useDebounce } from "@/hooks/useDebounce";
+import { TableOfContents } from "@/components/TableOfContents";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -62,6 +65,7 @@ interface NoteEditorProps {
   onToggleFavorite: (id: string) => void;
   onDelete: (id: string) => void;
   onBack?: () => void;
+  onAddNote?: () => void;
 }
 
 const fontSizes = ['12px', '14px', '16px', '18px', '20px', '24px', '28px', '32px'];
@@ -83,7 +87,7 @@ interface ToolbarProps {
   setFontSize: (size: string) => void;
 }
 
-const Toolbar = ({ editor, fontSize, setFontSize }: ToolbarProps) => {
+const Toolbar = memo(({ editor, fontSize, setFontSize }: ToolbarProps) => {
   if (!editor) return null;
 
   const handleFontSizeChange = (size: string) => {
@@ -427,13 +431,25 @@ const Toolbar = ({ editor, fontSize, setFontSize }: ToolbarProps) => {
       </DropdownMenu>
     </div>
   );
-};
+});
 
-export const NoteEditor = ({ note, onNoteChange, onClose, onToggleFavorite, onDelete, onBack }: NoteEditorProps) => {
+Toolbar.displayName = 'Toolbar';
+
+export const NoteEditor = ({ note, onNoteChange, onClose, onToggleFavorite, onDelete, onBack, onAddNote }: NoteEditorProps) => {
   const [title, setTitle] = useState(note?.title || "");
   const [tagInput, setTagInput] = useState("");
   const [tags, setTags] = useState<string[]>(note?.tags || []);
   const [fontSize, setFontSize] = useState("16px");
+  const [editorContent, setEditorContent] = useState(note?.content || '');
+  const [showTOC, setShowTOC] = useState(false);
+
+  // Debounce editor content and title to reduce parent re-renders
+  const debouncedTitle = useDebounce(title, 500);
+  const debouncedContent = useDebounce(editorContent, 500);
+  const debouncedTags = useDebounce(tags, 500);
+
+  // Track if we're updating from external source to avoid feedback loops
+  const isExternalUpdate = useRef(false);
 
   const editor = useEditor({
     extensions: [
@@ -441,6 +457,9 @@ export const NoteEditor = ({ note, onNoteChange, onClose, onToggleFavorite, onDe
         heading: {
           levels: [1, 2, 3],
         },
+      }),
+      HeadingId.configure({
+        types: ['heading'],
       }),
       Underline,
       Link.configure({
@@ -466,38 +485,42 @@ export const NoteEditor = ({ note, onNoteChange, onClose, onToggleFavorite, onDe
       },
     },
     onUpdate: ({ editor }) => {
-      if (note) {
-        onNoteChange({
-          id: note.id,
-          title,
-          content: editor.getHTML(),
-          tags,
-        });
+      if (!isExternalUpdate.current) {
+        setEditorContent(editor.getHTML());
       }
     },
   });
 
+  // Update editor when note changes (external update)
   useEffect(() => {
-    setTitle(note?.title || "");
-    setTags(note?.tags || []);
-    if (editor && note) {
-      const currentContent = editor.getHTML();
-      if (currentContent !== note.content) {
-        editor.commands.setContent(note.content || '');
+    if (note?.id) {
+      isExternalUpdate.current = true;
+      setTitle(note.title || "");
+      setTags(note.tags || []);
+      setEditorContent(note.content || '');
+
+      if (editor && note.content !== editor.getHTML()) {
+        editor.commands.setContent(note.content || '', false);
       }
+
+      // Reset flag after a short delay
+      setTimeout(() => {
+        isExternalUpdate.current = false;
+      }, 100);
     }
   }, [note?.id]);
 
+  // Auto-save: Only call onNoteChange when debounced values change
   useEffect(() => {
-    if (note && editor) {
+    if (note && !isExternalUpdate.current) {
       onNoteChange({
         id: note.id,
-        title,
-        content: editor.getHTML(),
-        tags,
+        title: debouncedTitle,
+        content: debouncedContent,
+        tags: debouncedTags,
       });
     }
-  }, [title, tags]);
+  }, [debouncedTitle, debouncedContent, debouncedTags, note?.id]);
 
   const handleTagKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && tagInput.trim()) {
@@ -520,117 +543,180 @@ export const NoteEditor = ({ note, onNoteChange, onClose, onToggleFavorite, onDe
 
   if (!note) {
     return (
-      <div className="flex-1 h-full bg-editor flex flex-col items-center justify-center">
-        <div className="text-center px-8">
-          <div className="w-16 h-16 rounded-full bg-muted/50 flex items-center justify-center mx-auto mb-4">
-            <CheckSquare className="w-8 h-8 text-muted-foreground" />
+      <div className="flex-1 h-full bg-editor flex flex-col items-center justify-center p-8">
+        <div className="text-center max-w-md space-y-6">
+          {/* Icon */}
+          <div className="w-20 h-20 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center mx-auto mb-4">
+            <CheckSquare className="w-10 h-10 text-primary" />
           </div>
-          <h2 className="text-xl font-medium text-foreground mb-2">No note selected</h2>
-          <p className="text-muted-foreground text-sm">
-            Select a note from the list or create a new one to start editing.
-          </p>
+
+          {/* Message */}
+          <div className="space-y-2">
+            <h2 className="text-2xl font-semibold text-foreground">No note selected</h2>
+            <p className="text-muted-foreground text-sm leading-relaxed">
+              Select a note from the list or create a new one to start editing.
+            </p>
+          </div>
+
+          {/* Quick Actions */}
+          <div className="flex flex-col sm:flex-row gap-3 pt-4">
+            <button
+              onClick={onAddNote}
+              className="px-4 py-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors font-medium text-sm shadow-sm hover:shadow-md"
+            >
+              Create New Note
+            </button>
+            <button
+              onClick={onBack}
+              className="px-4 py-2 rounded-lg border border-border hover:bg-muted transition-colors font-medium text-sm"
+            >
+              Browse Notes
+            </button>
+          </div>
+
+          {/* Tips */}
+          <div className="pt-6 border-t border-border mt-8">
+            <p className="text-xs text-muted-foreground mb-3">Quick Tips:</p>
+            <div className="grid gap-2 text-left">
+              <div className="flex items-start gap-2 text-xs text-muted-foreground">
+                <span className="text-primary">•</span>
+                <span>Use <kbd className="px-1.5 py-0.5 rounded bg-muted border border-border text-[10px]">Ctrl+N</kbd> to create a new note</span>
+              </div>
+              <div className="flex items-start gap-2 text-xs text-muted-foreground">
+                <span className="text-primary">•</span>
+                <span>Add headings to enable Table of Contents</span>
+              </div>
+              <div className="flex items-start gap-2 text-xs text-muted-foreground">
+                <span className="text-primary">•</span>
+                <span>Auto-save is enabled - your work is always safe</span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="flex-1 h-full bg-editor flex flex-col">
-      {/* Toolbar - directly without separate header */}
-      <Toolbar editor={editor} fontSize={fontSize} setFontSize={setFontSize} />
+    <div className="flex-1 h-full bg-editor flex">
+      {/* Main Editor Area */}
+      <div className="flex-1 flex flex-col min-w-0">
+        {/* Toolbar - directly without separate header */}
+        <Toolbar editor={editor} fontSize={fontSize} setFontSize={setFontSize} />
 
-      {/* Editor Content */}
-      <div className="flex-1 overflow-y-auto p-4 md:p-8 lg:p-12">
-        <div className="max-w-4xl mx-auto">
-          <input
-            type="text"
-            placeholder="Note title"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            className="w-full bg-transparent text-3xl md:text-4xl lg:text-5xl font-light text-foreground placeholder:text-muted-foreground/40 focus:outline-none mb-3"
-          />
-          
-          {/* Tags */}
-          <div className="flex items-center flex-wrap gap-2 mb-6">
-            {tags.map((tag) => (
-              <span
-                key={tag}
-                className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded bg-primary/10 text-primary"
-              >
-                #{tag}
-                <button 
-                  onClick={() => removeTag(tag)}
-                  className="hover:text-primary/70 transition-colors"
-                >
-                  <X className="w-3 h-3" />
-                </button>
-              </span>
-            ))}
+        {/* Editor Content */}
+        <div className="flex-1 overflow-y-auto p-4 md:p-8 lg:p-12">
+          <div className="max-w-4xl mx-auto">
             <input
               type="text"
-              placeholder={tags.length === 0 ? "Add a tag" : ""}
-              value={tagInput}
-              onChange={(e) => setTagInput(e.target.value)}
-              onKeyDown={handleTagKeyDown}
-              className="flex-1 min-w-[80px] bg-transparent text-sm text-muted-foreground placeholder:text-muted-foreground/40 focus:outline-none py-1"
+              placeholder="Note title"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              className="w-full bg-transparent text-3xl md:text-4xl lg:text-5xl font-light text-foreground placeholder:text-muted-foreground/40 focus:outline-none mb-3"
             />
+
+            {/* Tags */}
+            <div className="flex items-center flex-wrap gap-2 mb-6">
+              {tags.map((tag) => (
+                <span
+                  key={tag}
+                  className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded bg-primary/10 text-primary"
+                >
+                  #{tag}
+                  <button
+                    onClick={() => removeTag(tag)}
+                    className="hover:text-primary/70 transition-colors"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </span>
+              ))}
+              <input
+                type="text"
+                placeholder={tags.length === 0 ? "Add a tag" : ""}
+                value={tagInput}
+                onChange={(e) => setTagInput(e.target.value)}
+                onKeyDown={handleTagKeyDown}
+                className="flex-1 min-w-[80px] bg-transparent text-sm text-muted-foreground placeholder:text-muted-foreground/40 focus:outline-none py-1"
+              />
+            </div>
+
+            <EditorContent editor={editor} className="prose-editor" />
           </div>
-          
-          <EditorContent editor={editor} className="prose-editor" />
+        </div>
+
+        {/* Status Bar */}
+        <div className="flex items-center justify-between px-3 py-1.5 bg-background border-t border-border text-xs text-muted-foreground">
+          {/* Left side - Sync status */}
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-primary" />
+            <RefreshCw className="w-3.5 h-3.5 text-muted-foreground" />
+          </div>
+
+          {/* Right side - View mode, zoom, word count, date */}
+          <div className="flex items-center gap-2">
+            {/* TOC Toggle */}
+            <button
+              onClick={() => setShowTOC(!showTOC)}
+              className={cn(
+                "p-1 rounded hover:bg-muted transition-colors text-muted-foreground hover:text-foreground",
+                showTOC && "bg-primary/10 text-primary"
+              )}
+              title="Toggle Table of Contents"
+            >
+              <List className="w-3.5 h-3.5" />
+            </button>
+
+            {/* View mode icons */}
+            <div className="hidden sm:flex items-center gap-0.5">
+              <button className="p-1 rounded hover:bg-muted transition-colors text-muted-foreground hover:text-foreground" title="Focus mode">
+                <Monitor className="w-3.5 h-3.5" />
+              </button>
+              <button className="p-1 rounded hover:bg-muted transition-colors text-muted-foreground hover:text-foreground" title="Split view">
+                <PanelLeft className="w-3.5 h-3.5" />
+              </button>
+            </div>
+
+            {/* Separator */}
+            <div className="hidden sm:block w-px h-4 bg-border" />
+
+            {/* Zoom controls */}
+            <div className="hidden sm:flex items-center gap-0">
+              <button className="p-1 rounded hover:bg-muted transition-colors text-muted-foreground hover:text-foreground" title="Zoom out">
+                <Minus className="w-3.5 h-3.5" />
+              </button>
+              <span className="text-xs min-w-[40px] text-center text-muted-foreground">100%</span>
+              <button className="p-1 rounded hover:bg-muted transition-colors text-muted-foreground hover:text-foreground" title="Zoom in">
+                <Plus className="w-3.5 h-3.5" />
+              </button>
+            </div>
+
+            {/* Word count */}
+            <span className="text-muted-foreground">{wordCount} words</span>
+
+            {/* Date & Time */}
+            <span className="hidden md:inline text-muted-foreground">
+              {new Date().toLocaleDateString('en-US', {
+                month: '2-digit',
+                day: '2-digit',
+                year: 'numeric'
+              }).replace(/\//g, '-')} {new Date().toLocaleTimeString('en-US', {
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: true
+              })}
+            </span>
+          </div>
         </div>
       </div>
 
-      {/* Status Bar */}
-      <div className="flex items-center justify-between px-3 py-1.5 bg-background border-t border-border text-xs text-muted-foreground">
-        {/* Left side - Sync status */}
-        <div className="flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-primary" />
-          <RefreshCw className="w-3.5 h-3.5 text-muted-foreground" />
-        </div>
-        
-        {/* Right side - View mode, zoom, word count, date */}
-        <div className="flex items-center gap-2">
-          {/* View mode icons */}
-          <div className="hidden sm:flex items-center gap-0.5">
-            <button className="p-1 rounded hover:bg-muted transition-colors text-muted-foreground hover:text-foreground" title="Focus mode">
-              <Monitor className="w-3.5 h-3.5" />
-            </button>
-            <button className="p-1 rounded hover:bg-muted transition-colors text-muted-foreground hover:text-foreground" title="Split view">
-              <PanelLeft className="w-3.5 h-3.5" />
-            </button>
-          </div>
-          
-          {/* Separator */}
-          <div className="hidden sm:block w-px h-4 bg-border" />
-          
-          {/* Zoom controls */}
-          <div className="hidden sm:flex items-center gap-0">
-            <button className="p-1 rounded hover:bg-muted transition-colors text-muted-foreground hover:text-foreground" title="Zoom out">
-              <Minus className="w-3.5 h-3.5" />
-            </button>
-            <span className="text-xs min-w-[40px] text-center text-muted-foreground">100%</span>
-            <button className="p-1 rounded hover:bg-muted transition-colors text-muted-foreground hover:text-foreground" title="Zoom in">
-              <Plus className="w-3.5 h-3.5" />
-            </button>
-          </div>
-          
-          {/* Word count */}
-          <span className="text-muted-foreground">{wordCount} words</span>
-          
-          {/* Date & Time */}
-          <span className="hidden md:inline text-muted-foreground">
-            {new Date().toLocaleDateString('en-US', { 
-              month: '2-digit',
-              day: '2-digit', 
-              year: 'numeric' 
-            }).replace(/\//g, '-')} {new Date().toLocaleTimeString('en-US', { 
-              hour: '2-digit', 
-              minute: '2-digit',
-              hour12: true
-            })}
-          </span>
-        </div>
-      </div>
+      {/* Table of Contents Panel */}
+      {showTOC && (
+        <TableOfContents
+          content={editorContent}
+          className="w-64 flex-shrink-0 hidden lg:flex"
+        />
+      )}
     </div>
   );
 };

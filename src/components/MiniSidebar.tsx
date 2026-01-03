@@ -1,18 +1,20 @@
-import { 
-  FileText, 
-  Star, 
-  Bell, 
-  BookOpen, 
-  Trash2, 
-  Archive, 
-  Hash, 
-  Settings, 
-  Home, 
+import {
+  FileText,
+  Star,
+  Bell,
+  BookOpen,
+  Trash2,
+  Archive,
+  Hash,
+  Settings,
+  Home,
   FolderOpen,
-  Menu
+  Menu,
+  CheckCircle2
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "./ThemeToggle";
+import { AppSettings } from "./AppSettings";
 
 type SidebarTab = "home" | "notebooks" | "tags";
 
@@ -124,17 +126,10 @@ export const MiniSidebar = ({
       </nav>
 
       {/* Footer */}
-      <div className="flex flex-col items-center gap-1 py-2.5 px-1 border-t border-border">
-        <div className="flex items-center gap-1">
-          <div className="w-2 h-2 rounded-full bg-primary" />
-        </div>
+      <div className="flex flex-col items-center gap-1 py-2.5 px-1 border-t border-border bg-sidebar/50">
+        <CheckCircle2 className="w-3.5 h-3.5 text-green-500" title="All changes saved" />
         <ThemeToggle className="p-2" />
-        <button 
-          className="p-2 rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
-          title="Settings"
-        >
-          <Settings className="w-4 h-4" />
-        </button>
+        <AppSettings autoSaveDelay={500} searchDelay={300} />
       </div>
     </aside>
   );

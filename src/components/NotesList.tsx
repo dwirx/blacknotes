@@ -1,6 +1,6 @@
 import { Search, Plus, Star, Trash2, Archive, RotateCcw, MoreHorizontal, ArrowUpDown, LayoutGrid, GripVertical } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useCallback } from "react";
+import { useCallback, memo } from "react";
 import {
   DndContext,
   closestCenter,
@@ -189,7 +189,7 @@ const SortableNoteItem = ({
   );
 };
 
-export const NotesList = ({
+export const NotesList = memo(({
   notes,
   selectedNoteId,
   onNoteSelect,
@@ -337,4 +337,7 @@ export const NotesList = ({
       </div>
     </div>
   );
-};
+});
+
+NotesList.displayName = 'NotesList';
+
