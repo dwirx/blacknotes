@@ -6,16 +6,30 @@ import {
   Trash2, 
   Archive, 
   Hash, 
-  Copy, 
   Settings, 
   X, 
   Home, 
   FolderOpen,
-  SlidersHorizontal
+  SlidersHorizontal,
+  Plus,
+  Notebook
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useState } from "react";
 
 type SidebarTab = "home" | "notebooks" | "tags";
+
+interface NotebookItem {
+  id: string;
+  name: string;
+  noteCount: number;
+}
+
+interface TagItem {
+  id: string;
+  name: string;
+  noteCount: number;
+}
 
 interface SidebarProps {
   activeSection: string;
@@ -24,6 +38,14 @@ interface SidebarProps {
   onClose?: () => void;
   activeTab: SidebarTab;
   onTabChange: (tab: SidebarTab) => void;
+  notebooks: NotebookItem[];
+  tags: TagItem[];
+  selectedNotebookId: string | null;
+  selectedTagId: string | null;
+  onNotebookSelect: (id: string) => void;
+  onTagSelect: (id: string) => void;
+  onAddNotebook: () => void;
+  onAddTag: () => void;
 }
 
 const navItems = [
@@ -42,7 +64,26 @@ export const Sidebar = ({
   onClose,
   activeTab,
   onTabChange,
+  notebooks,
+  tags,
+  selectedNotebookId,
+  selectedTagId,
+  onNotebookSelect,
+  onTagSelect,
+  onAddNotebook,
+  onAddTag,
 }: SidebarProps) => {
+  const [notebookFilter, setNotebookFilter] = useState("");
+  const [tagFilter, setTagFilter] = useState("");
+
+  const filteredNotebooks = notebooks.filter(nb => 
+    nb.name.toLowerCase().includes(notebookFilter.toLowerCase())
+  );
+
+  const filteredTags = tags.filter(tag => 
+    tag.name.toLowerCase().includes(tagFilter.toLowerCase())
+  );
+
   return (
     <aside className="w-[200px] h-full bg-sidebar flex flex-col border-r border-border">
       {/* Logo */}
@@ -67,7 +108,7 @@ export const Sidebar = ({
       </div>
 
       {/* Tab Icons - Home, Notebooks, Tags */}
-      <div className="flex items-center gap-1 px-3 py-2 border-b border-border">
+      <div className="flex items-center gap-1 px-3 py-2">
         <button 
           onClick={() => onTabChange("home")}
           className={cn(
@@ -105,6 +146,15 @@ export const Sidebar = ({
           <Hash className="w-4 h-4" />
         </button>
         <div className="flex-1" />
+        {(activeTab === "notebooks" || activeTab === "tags") && (
+          <button 
+            onClick={activeTab === "notebooks" ? onAddNotebook : onAddTag}
+            className="p-2 rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+            title={activeTab === "notebooks" ? "Add notebook" : "Add tag"}
+          >
+            <Plus className="w-4 h-4" />
+          </button>
+        )}
         <button className="p-2 rounded-md text-muted-foreground hover:bg-muted transition-colors">
           <SlidersHorizontal className="w-4 h-4" />
         </button>
@@ -148,25 +198,153 @@ export const Sidebar = ({
       )}
 
       {activeTab === "notebooks" && (
-        <div className="flex-1 px-2 py-2 text-sm text-muted-foreground">
-          <p className="text-center py-8">Switch to notebooks view</p>
+        <div className="flex-1 flex flex-col overflow-hidden">
+          {/* Notebooks List */}
+          <div className="flex-1 px-2 py-2 overflow-y-auto">
+            {filteredNotebooks.length === 0 && notebookFilter === "" ? (
+              <div className="flex flex-col items-center justify-center h-full text-center px-2">
+                <div className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-primary/10 text-primary text-xs mb-3">
+                  <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+                  TIP
+                </div>
+                <p className="text-xs text-muted-foreground mb-4">
+                  Hold Ctrl/Cmd & click on multiple items to select them.
+                </p>
+                <button
+                  onClick={onAddNotebook}
+                  className="inline-flex items-center gap-2 text-primary hover:text-primary/80 transition-colors text-sm py-2 px-3"
+                >
+                  Add a notebook <Plus className="w-4 h-4" />
+                </button>
+              </div>
+            ) : filteredNotebooks.length === 0 ? (
+              <p className="text-xs text-muted-foreground text-center py-4">No notebooks found</p>
+            ) : (
+              <div className="space-y-1">
+                {filteredNotebooks.map((notebook) => (
+                  <button
+                    key={notebook.id}
+                    onClick={() => onNotebookSelect(notebook.id)}
+                    className={cn(
+                      "w-full flex items-center gap-3 px-3 py-2.5 rounded-md text-sm transition-all duration-200",
+                      selectedNotebookId === notebook.id
+                        ? "bg-primary text-primary-foreground shadow-sm"
+                        : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                    )}
+                  >
+                    <Notebook className="w-4 h-4 flex-shrink-0" />
+                    <span className="flex-1 text-left truncate">{notebook.name}</span>
+                    <span className={cn(
+                      "text-xs min-w-[20px] text-center",
+                      selectedNotebookId === notebook.id 
+                        ? "text-primary-foreground/70" 
+                        : "text-muted-foreground"
+                    )}>
+                      {notebook.noteCount}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+          
+          {/* Filter at bottom */}
+          <div className="px-3 py-2 border-t border-border">
+            <input
+              type="text"
+              placeholder="Filter notebooks..."
+              value={notebookFilter}
+              onChange={(e) => setNotebookFilter(e.target.value)}
+              className="w-full bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
+            />
+          </div>
         </div>
       )}
 
       {activeTab === "tags" && (
-        <div className="flex-1 px-2 py-2 text-sm text-muted-foreground">
-          <p className="text-center py-8">Switch to tags view</p>
+        <div className="flex-1 flex flex-col overflow-hidden">
+          {/* Tags List */}
+          <div className="flex-1 px-2 py-2 overflow-y-auto">
+            {filteredTags.length === 0 && tagFilter === "" ? (
+              <div className="flex flex-col items-center justify-center h-full text-center px-2">
+                <div className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-primary/10 text-primary text-xs mb-3">
+                  <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+                  TIP
+                </div>
+                <p className="text-xs text-muted-foreground mb-4">
+                  Hold Ctrl/Cmd & click on multiple items to select them.
+                </p>
+                <button
+                  onClick={onAddTag}
+                  className="inline-flex items-center gap-2 text-primary hover:text-primary/80 transition-colors text-sm py-2 px-3"
+                >
+                  Add a tag <Plus className="w-4 h-4" />
+                </button>
+              </div>
+            ) : filteredTags.length === 0 ? (
+              <p className="text-xs text-muted-foreground text-center py-4">No tags found</p>
+            ) : (
+              <div className="space-y-1">
+                {filteredTags.map((tag) => (
+                  <button
+                    key={tag.id}
+                    onClick={() => onTagSelect(tag.id)}
+                    className={cn(
+                      "w-full flex items-center gap-3 px-3 py-2.5 rounded-md text-sm transition-all duration-200",
+                      selectedTagId === tag.id
+                        ? "bg-primary text-primary-foreground shadow-sm"
+                        : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                    )}
+                  >
+                    <Hash className="w-4 h-4 flex-shrink-0" />
+                    <span className="flex-1 text-left truncate">{tag.name}</span>
+                    <span className={cn(
+                      "text-xs min-w-[20px] text-center",
+                      selectedTagId === tag.id 
+                        ? "text-primary-foreground/70" 
+                        : "text-muted-foreground"
+                    )}>
+                      {tag.noteCount}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+          
+          {/* Filter at bottom */}
+          <div className="px-3 py-2 border-t border-border">
+            <input
+              type="text"
+              placeholder="Filter tags..."
+              value={tagFilter}
+              onChange={(e) => setTagFilter(e.target.value)}
+              className="w-full bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
+            />
+          </div>
         </div>
       )}
 
-      {/* Footer */}
-      <div className="px-4 py-3 border-t border-border flex items-center gap-2">
-        <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-        <span className="text-xs text-muted-foreground">Synced</span>
-        <button className="ml-auto text-muted-foreground hover:text-foreground transition-colors">
-          <Settings className="w-4 h-4" />
-        </button>
-      </div>
+      {/* Footer - only show on home tab */}
+      {activeTab === "home" && (
+        <div className="px-4 py-3 border-t border-border flex items-center gap-2">
+          <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+          <span className="text-xs text-muted-foreground">Synced</span>
+          <button className="ml-auto text-muted-foreground hover:text-foreground transition-colors">
+            <Settings className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
+      {/* Sync status for notebooks/tags */}
+      {(activeTab === "notebooks" || activeTab === "tags") && (
+        <div className="px-3 py-2 flex items-center gap-2">
+          <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+          <button className="text-muted-foreground hover:text-foreground transition-colors">
+            <Settings className="w-4 h-4" />
+          </button>
+        </div>
+      )}
     </aside>
   );
 };
