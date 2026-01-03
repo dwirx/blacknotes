@@ -375,14 +375,21 @@ const Index = () => {
   return (
     <div className="flex h-screen overflow-hidden bg-background">
       {/* Mobile Header */}
-      <div className="md:hidden fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-4 py-3 bg-background border-b border-border">
-        <button
-          onClick={() => setSidebarOpen(!sidebarOpen)}
-          className="p-2 rounded-md text-foreground hover:bg-muted transition-colors"
-        >
-          <Menu className="w-5 h-5" />
-        </button>
-        <span className="font-semibold text-foreground">Notesnook</span>
+      <div className="lg:hidden fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-3 py-2 bg-background border-b border-border">
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            className="p-2 rounded-md text-foreground hover:bg-muted transition-colors"
+          >
+            <Menu className="w-5 h-5" />
+          </button>
+          <div className="flex items-center gap-1">
+            <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center">
+              <span className="text-primary-foreground text-xs font-bold">N</span>
+            </div>
+            <span className="font-semibold text-foreground text-sm">Notesnook</span>
+          </div>
+        </div>
         <button
           onClick={() => setNotesListOpen(!notesListOpen)}
           className={cn(
@@ -394,18 +401,18 @@ const Index = () => {
         </button>
       </div>
 
-      {/* Sidebar Overlay for Mobile */}
+      {/* Sidebar Overlay for Mobile/Tablet */}
       {sidebarOpen && (
         <div 
-          className="md:hidden fixed inset-0 z-40 bg-black/50"
+          className="lg:hidden fixed inset-0 z-40 bg-black/50"
           onClick={() => setSidebarOpen(false)}
         />
       )}
 
       {/* Sidebar */}
       <div className={cn(
-        "fixed md:relative z-50 md:z-0 h-full transition-transform duration-300 ease-in-out",
-        sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
+        "fixed lg:relative z-50 lg:z-0 h-full transition-transform duration-300 ease-in-out flex-shrink-0",
+        sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
       )}>
         <Sidebar
           activeSection={activeSection}
@@ -426,8 +433,8 @@ const Index = () => {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col pt-14 md:pt-0 overflow-hidden">
-        {/* Tabs Bar - Desktop */}
+      <div className="flex-1 flex flex-col pt-12 lg:pt-0 overflow-hidden min-w-0">
+        {/* Tabs Bar - Desktop/Tablet */}
         <div className="hidden md:block">
           <NoteTabs
             openNotes={openNotes}
@@ -445,9 +452,9 @@ const Index = () => {
         <div className="flex-1 flex flex-row overflow-hidden">
           {/* Notes List */}
           <div className={cn(
-            "md:block transition-all duration-300 ease-in-out overflow-hidden",
-            notesListOpen ? "flex-shrink-0" : "hidden md:hidden",
-            selectedNoteId && window.innerWidth < 768 ? "hidden" : ""
+            "transition-all duration-300 ease-in-out overflow-hidden flex-shrink-0 w-full sm:w-[280px] md:w-[300px] lg:w-[320px]",
+            notesListOpen ? "block" : "hidden",
+            selectedNoteId ? "hidden sm:block" : "block"
           )}>
             <NotesList
               notes={filteredNotes}
@@ -467,7 +474,7 @@ const Index = () => {
           {/* Note Editor */}
           <div className={cn(
             "flex-1 min-w-0",
-            !selectedNoteId && window.innerWidth < 768 ? "hidden md:block" : ""
+            selectedNoteId ? "block" : "hidden sm:block"
           )}>
             <NoteEditor
               note={selectedNote ? {
