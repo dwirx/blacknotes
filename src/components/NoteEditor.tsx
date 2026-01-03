@@ -531,56 +531,55 @@ export const NoteEditor = ({ note, onNoteChange, onClose, onToggleFavorite, onDe
 
   return (
     <div className="flex-1 h-full bg-editor flex flex-col">
-      {/* Tab Bar */}
-      <div className="flex items-center justify-between px-2 md:px-4 py-2 bg-background border-b border-border">
+      {/* Header with actions - simplified, no duplicate tab */}
+      <div className="flex items-center justify-between px-3 py-2 bg-background border-b border-border">
         <div className="flex items-center gap-2">
           {/* Back button for mobile */}
           {onBack && (
             <button
               onClick={onBack}
-              className="md:hidden p-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+              className="sm:hidden p-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
             >
               <ChevronLeft className="w-5 h-5" />
             </button>
           )}
-          <div className="flex items-center gap-2 px-2 md:px-3 py-1.5 bg-muted/50 rounded-md">
-            <div className="w-4 h-4 rounded bg-primary/20 flex items-center justify-center">
-              <span className="text-primary text-xs">📄</span>
+          <div className="flex items-center gap-2 px-2 py-1 bg-muted/30 rounded text-sm">
+            <div className="w-4 h-4 rounded bg-muted flex items-center justify-center">
+              <span className="text-[10px]">📄</span>
             </div>
-            <span className="text-sm text-foreground truncate max-w-[100px] md:max-w-[150px]">
+            <span className="text-foreground truncate max-w-[120px] sm:max-w-[180px]">
               {title || "Untitled"}
             </span>
             <button 
               onClick={onClose}
-              className="text-muted-foreground hover:text-foreground transition-colors hidden md:block"
+              className="text-muted-foreground hover:text-foreground transition-colors"
             >
               <X className="w-3 h-3" />
             </button>
           </div>
         </div>
-        <div className="flex items-center gap-0.5 md:gap-1">
+        <div className="flex items-center gap-1">
           <button 
             onClick={() => onToggleFavorite(note.id)}
             className={cn(
-              "p-2 md:p-1.5 transition-colors rounded",
+              "p-1.5 transition-colors rounded",
               note.isFavorite 
                 ? "text-primary hover:text-primary/80" 
                 : "text-muted-foreground hover:text-foreground"
             )}
           >
-            <Star className={cn("w-5 h-5 md:w-4 md:h-4", note.isFavorite && "fill-current")} />
+            <Star className={cn("w-4 h-4", note.isFavorite && "fill-current")} />
           </button>
           <button 
             onClick={() => onDelete(note.id)}
-            className="p-2 md:p-1.5 text-muted-foreground hover:text-destructive transition-colors rounded"
+            className="p-1.5 text-muted-foreground hover:text-destructive transition-colors rounded"
           >
-            <Trash2 className="w-5 h-5 md:w-4 md:h-4" />
+            <Trash2 className="w-4 h-4" />
           </button>
-          <div className="w-px h-4 bg-border mx-1 hidden md:block" />
-          <button className="p-2 md:p-1.5 text-muted-foreground hover:text-foreground transition-colors hidden md:block">
+          <button className="p-1.5 text-muted-foreground hover:text-foreground transition-colors">
             <Maximize2 className="w-4 h-4" />
           </button>
-          <button className="p-2 md:p-1.5 text-muted-foreground hover:text-foreground transition-colors hidden md:block">
+          <button className="p-1.5 text-muted-foreground hover:text-foreground transition-colors">
             <Search className="w-4 h-4" />
           </button>
         </div>
@@ -601,11 +600,11 @@ export const NoteEditor = ({ note, onNoteChange, onClose, onToggleFavorite, onDe
           />
           
           {/* Tags */}
-          <div className="flex items-center flex-wrap gap-2 mb-4 md:mb-6">
+          <div className="flex items-center flex-wrap gap-2 mb-4">
             {tags.map((tag) => (
               <span
                 key={tag}
-                className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-md bg-primary/10 text-primary"
+                className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded bg-primary/10 text-primary"
               >
                 #{tag}
                 <button 
@@ -622,7 +621,7 @@ export const NoteEditor = ({ note, onNoteChange, onClose, onToggleFavorite, onDe
               value={tagInput}
               onChange={(e) => setTagInput(e.target.value)}
               onKeyDown={handleTagKeyDown}
-              className="flex-1 min-w-[100px] bg-transparent text-sm text-muted-foreground placeholder:text-muted-foreground/50 focus:outline-none py-1"
+              className="flex-1 min-w-[80px] bg-transparent text-sm text-muted-foreground placeholder:text-muted-foreground/50 focus:outline-none py-1"
             />
           </div>
           
@@ -632,12 +631,15 @@ export const NoteEditor = ({ note, onNoteChange, onClose, onToggleFavorite, onDe
 
       {/* Status Bar */}
       <div className="flex items-center justify-between px-4 py-2 bg-background border-t border-border text-xs text-muted-foreground">
-        <div className="flex items-center gap-4">
-          <span className="text-primary">● Saved</span>
+        <div className="flex items-center gap-2">
+          <span className="text-primary flex items-center gap-1">
+            <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+            Saved
+          </span>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
           <span>{wordCount} words</span>
-          <span className="hidden md:inline">{charCount} chars</span>
+          <span>{charCount} chars</span>
         </div>
       </div>
     </div>
