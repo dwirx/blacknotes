@@ -4,7 +4,7 @@ import { NotesList } from "@/components/NotesList";
 import { NoteEditor } from "@/components/NoteEditor";
 import { NoteTabs } from "@/components/NoteTabs";
 import { useToast } from "@/hooks/use-toast";
-import { Menu, X, PanelLeftClose, PanelLeft } from "lucide-react";
+import { Menu, X, PanelLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   ResizableHandle,
@@ -451,7 +451,7 @@ const Index = () => {
                 maxSize={25}
                 className="min-w-0"
               >
-                <div className="h-full relative">
+                <div className="h-full">
                   <Sidebar
                     activeSection={activeSection}
                     onSectionChange={handleSectionChange}
@@ -467,15 +467,9 @@ const Index = () => {
                     onTagSelect={setSelectedTagId}
                     onAddNotebook={handleAddNotebook}
                     onAddTag={handleAddTag}
+                    onCollapse={() => setSidebarCollapsed(true)}
+                    isCollapsible={true}
                   />
-                  {/* Collapse button */}
-                  <button
-                    onClick={() => setSidebarCollapsed(true)}
-                    className="absolute top-2 right-2 p-1 rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors z-10"
-                    title="Collapse sidebar"
-                  >
-                    <PanelLeftClose className="w-4 h-4" />
-                  </button>
                 </div>
               </ResizablePanel>
               <ResizableHandle withHandle className="bg-border hover:bg-primary/50 transition-colors" />
