@@ -12,7 +12,8 @@ import {
   FolderOpen,
   SlidersHorizontal,
   Plus,
-  Notebook
+  Notebook,
+  PanelLeftClose
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
@@ -46,6 +47,8 @@ interface SidebarProps {
   onTagSelect: (id: string) => void;
   onAddNotebook: () => void;
   onAddTag: () => void;
+  onCollapse?: () => void;
+  isCollapsible?: boolean;
 }
 
 const navItems = [
@@ -72,6 +75,8 @@ export const Sidebar = ({
   onTagSelect,
   onAddNotebook,
   onAddTag,
+  onCollapse,
+  isCollapsible = false,
 }: SidebarProps) => {
   const [notebookFilter, setNotebookFilter] = useState("");
   const [tagFilter, setTagFilter] = useState("");
@@ -87,19 +92,25 @@ export const Sidebar = ({
   return (
     <aside className="w-[200px] h-full bg-sidebar flex flex-col border-r border-border">
       {/* Logo */}
-      <div className="flex items-center gap-2 px-4 py-4">
-        <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center">
+      <div className="flex items-center gap-2 px-3 py-3">
+        <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
           <span className="text-primary-foreground text-xs font-bold">N</span>
         </div>
-        <span className="text-foreground font-semibold">Notesnook</span>
-        <div className="ml-auto flex items-center gap-1">
-          <button className="text-muted-foreground hover:text-foreground transition-colors p-1">
-            <Settings className="w-4 h-4" />
-          </button>
+        <span className="text-foreground font-semibold flex-1 truncate">Notesnook</span>
+        <div className="flex items-center gap-0.5 flex-shrink-0">
+          {isCollapsible && onCollapse && (
+            <button 
+              onClick={onCollapse}
+              className="text-muted-foreground hover:text-foreground hover:bg-muted transition-colors p-1.5 rounded"
+              title="Collapse sidebar"
+            >
+              <PanelLeftClose className="w-4 h-4" />
+            </button>
+          )}
           {onClose && (
             <button 
               onClick={onClose}
-              className="md:hidden text-muted-foreground hover:text-foreground transition-colors p-1"
+              className="lg:hidden text-muted-foreground hover:text-foreground transition-colors p-1.5 rounded"
             >
               <X className="w-4 h-4" />
             </button>

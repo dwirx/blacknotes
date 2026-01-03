@@ -1,4 +1,4 @@
-import { Search, Plus, ChevronLeft, ChevronRight, Star, Trash2, Archive, RotateCcw, MoreHorizontal, ArrowUpDown, LayoutGrid, GripVertical } from "lucide-react";
+import { Search, Plus, Star, Trash2, Archive, RotateCcw, MoreHorizontal, ArrowUpDown, LayoutGrid, GripVertical } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useCallback } from "react";
 import {
@@ -11,7 +11,6 @@ import {
   DragEndEvent,
 } from "@dnd-kit/core";
 import {
-  arrayMove,
   SortableContext,
   sortableKeyboardCoordinates,
   useSortable,
@@ -105,15 +104,15 @@ const SortableNoteItem = ({
       )}
       onClick={() => onNoteSelect(note.id)}
     >
-      <div className="flex items-start gap-1">
+      <div className="flex items-start gap-2">
         {/* Drag handle */}
         <div
           {...attributes}
           {...listeners}
-          className="opacity-0 group-hover:opacity-100 p-1 cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground transition-opacity"
+          className="mt-1 p-1 cursor-grab active:cursor-grabbing text-muted-foreground/50 hover:text-muted-foreground transition-colors flex-shrink-0"
           onClick={(e) => e.stopPropagation()}
         >
-          <GripVertical className="w-3 h-3" />
+          <GripVertical className="w-4 h-4" />
         </div>
 
         <div className="flex-1 min-w-0">
