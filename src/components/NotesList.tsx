@@ -50,6 +50,7 @@ interface NotesListProps {
   onSearchChange: (query: string) => void;
   activeSection: string;
   onReorderNotes?: (activeId: string, overId: string) => void;
+  hideSearch?: boolean;
 }
 
 interface SortableNoteItemProps {
@@ -201,6 +202,7 @@ export const NotesList = ({
   onSearchChange,
   activeSection,
   onReorderNotes,
+  hideSearch = false,
 }: NotesListProps) => {
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -243,32 +245,36 @@ export const NotesList = ({
 
   return (
     <div className="w-full h-full bg-notesList flex flex-col border-r border-border">
-      {/* Search Header */}
-      <div className="px-3 py-2">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <input
-            type="text"
-            placeholder="Search in Notes"
-            value={searchQuery}
-            onChange={(e) => onSearchChange(e.target.value)}
-            className="w-full bg-muted/30 border border-border rounded-md py-2 pl-9 pr-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-          />
+      {/* Search Header - only show if hideSearch is false */}
+      {!hideSearch && (
+        <div className="px-3 py-2">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <input
+              type="text"
+              placeholder="Search in Notes"
+              value={searchQuery}
+              onChange={(e) => onSearchChange(e.target.value)}
+              className="w-full bg-muted/30 border border-border rounded-md py-2 pl-9 pr-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+            />
+          </div>
         </div>
-      </div>
+      )}
 
-      {/* Section Header */}
-      <div className="flex items-center justify-between px-3 py-2">
-        <span className="text-xs font-medium text-primary uppercase tracking-wide">Recent</span>
-        <div className="flex items-center gap-1">
-          <button className="p-1.5 text-muted-foreground hover:text-foreground transition-colors">
-            <ArrowUpDown className="w-3.5 h-3.5" />
-          </button>
-          <button className="p-1.5 text-muted-foreground hover:text-foreground transition-colors">
-            <LayoutGrid className="w-3.5 h-3.5" />
-          </button>
+      {/* Section Header - only show if hideSearch is false */}
+      {!hideSearch && (
+        <div className="flex items-center justify-between px-3 py-2">
+          <span className="text-xs font-medium text-primary uppercase tracking-wide">Recent</span>
+          <div className="flex items-center gap-1">
+            <button className="p-1.5 text-muted-foreground hover:text-foreground transition-colors">
+              <ArrowUpDown className="w-3.5 h-3.5" />
+            </button>
+            <button className="p-1.5 text-muted-foreground hover:text-foreground transition-colors">
+              <LayoutGrid className="w-3.5 h-3.5" />
+            </button>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Notes List */}
       <div className="flex-1 overflow-hidden px-1">

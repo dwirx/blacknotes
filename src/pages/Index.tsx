@@ -5,7 +5,24 @@ import { NotesList } from "@/components/NotesList";
 import { NoteEditor } from "@/components/NoteEditor";
 import { NoteTabs } from "@/components/NoteTabs";
 import { useToast } from "@/hooks/use-toast";
-import { Menu, X, PanelLeft, Plus, PanelRight } from "lucide-react";
+import { 
+  Menu, 
+  X, 
+  PanelLeft, 
+  Plus, 
+  PanelRight, 
+  Search, 
+  ChevronLeft, 
+  ChevronRight, 
+  FileText, 
+  Maximize2, 
+  Undo, 
+  Redo, 
+  Cloud, 
+  List, 
+  MoreVertical,
+  ArrowUpDown
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   ResizableHandle,
@@ -442,108 +459,221 @@ const Index = () => {
       </div>
 
       {/* Desktop Layout with Resizable Panels */}
-      <div className="hidden lg:flex flex-1 h-full">
-        {/* Mini Sidebar when collapsed */}
-        {sidebarCollapsed && (
-          <MiniSidebar
-            activeSection={activeSection}
-            onSectionChange={handleSectionChange}
-            activeTab={sidebarTab}
-            onTabChange={setSidebarTab}
-            onExpand={() => setSidebarCollapsed(false)}
-          />
-        )}
+      <div className="hidden lg:flex flex-1 h-full flex-col">
+        {/* Global Tabs Bar */}
+        <div className="flex items-center bg-background border-b border-border min-h-[44px] flex-shrink-0">
+          {/* Left side - Search (above notes list area) */}
+          <div className="flex items-center min-w-[200px] max-w-[300px] px-3 border-r border-border">
+            <div className="flex-1 flex items-center gap-2 px-3 py-1.5 bg-muted/50 rounded-md">
+              <Search className="w-4 h-4 text-muted-foreground" />
+              <input
+                type="text"
+                placeholder="Search in Notes"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
+              />
+            </div>
+          </div>
 
-        <ResizablePanelGroup direction="horizontal" className="h-full">
-          {/* Sidebar Panel */}
-          {!sidebarCollapsed && (
-            <>
-              <ResizablePanel 
-                defaultSize={15} 
-                minSize={10} 
-                maxSize={25}
-                className="min-w-0"
+          {/* Center - Add button, navigation, and tabs */}
+          <div className="flex-1 flex items-center min-w-0">
+            {/* Add and Nav buttons */}
+            <div className="flex items-center gap-0.5 px-2 flex-shrink-0">
+              <button
+                onClick={handleAddNote}
+                className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground hover:bg-primary/90 transition-colors"
+                title="Add new note"
               >
-                <div className="h-full">
-                  <Sidebar
-                    activeSection={activeSection}
-                    onSectionChange={handleSectionChange}
-                    noteCounts={noteCounts}
-                    onClose={() => setSidebarOpen(false)}
-                    activeTab={sidebarTab}
-                    onTabChange={setSidebarTab}
-                    notebooks={notebooks}
-                    tags={displayTags}
-                    selectedNotebookId={selectedNotebookId}
-                    selectedTagId={selectedTagId}
-                    onNotebookSelect={setSelectedNotebookId}
-                    onTagSelect={setSelectedTagId}
-                    onAddNotebook={handleAddNotebook}
-                    onAddTag={handleAddTag}
-                    onCollapse={() => setSidebarCollapsed(true)}
-                    isCollapsible={true}
-                  />
+                <Plus className="w-4 h-4" />
+              </button>
+              <button
+                onClick={handleNavigateBack}
+                disabled={historyIndex <= 0}
+                className={cn(
+                  "p-1.5 rounded transition-colors",
+                  historyIndex > 0
+                    ? "text-muted-foreground hover:text-foreground hover:bg-muted"
+                    : "text-muted-foreground/30 cursor-not-allowed"
+                )}
+                title="Go back"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+              <button
+                onClick={handleNavigateForward}
+                disabled={historyIndex >= noteHistory.length - 1}
+                className={cn(
+                  "p-1.5 rounded transition-colors",
+                  historyIndex < noteHistory.length - 1
+                    ? "text-muted-foreground hover:text-foreground hover:bg-muted"
+                    : "text-muted-foreground/30 cursor-not-allowed"
+                )}
+                title="Go forward"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Tabs */}
+            <div className="flex-1 flex items-center overflow-x-auto scrollbar-none min-w-0">
+              {openNotes.map((note) => (
+                <div
+                  key={note.id}
+                  className={cn(
+                    "flex items-center gap-2 px-3 py-2 border-r border-border cursor-pointer transition-colors group min-w-0 max-w-[180px]",
+                    selectedNoteId === note.id
+                      ? "bg-editor text-foreground"
+                      : "bg-background text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                  )}
+                  onClick={() => handleNoteSelect(note.id)}
+                >
+                  <FileText className="w-4 h-4 flex-shrink-0 text-primary" />
+                  <span className="text-sm truncate">{note.title || "Untitled"}</span>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleTabClose(note.id);
+                    }}
+                    className="p-0.5 rounded hover:bg-muted transition-colors opacity-0 group-hover:opacity-100 flex-shrink-0"
+                    title="Close tab"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
                 </div>
-              </ResizablePanel>
-              <ResizableHandle withHandle />
-            </>
+              ))}
+            </div>
+          </div>
+
+          {/* Right side - Actions */}
+          <div className="flex items-center gap-0.5 px-2 flex-shrink-0 border-l border-border">
+            <button className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded transition-colors" title="Fullscreen">
+              <Maximize2 className="w-4 h-4" />
+            </button>
+            <button className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded transition-colors" title="Undo">
+              <Undo className="w-4 h-4" />
+            </button>
+            <button className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded transition-colors" title="Redo">
+              <Redo className="w-4 h-4" />
+            </button>
+            <button className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded transition-colors" title="Sync">
+              <Cloud className="w-4 h-4" />
+            </button>
+            <button className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded transition-colors" title="List view">
+              <List className="w-4 h-4" />
+            </button>
+            <button className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded transition-colors" title="Search">
+              <Search className="w-4 h-4" />
+            </button>
+            <button className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded transition-colors" title="More options">
+              <MoreVertical className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+
+        {/* Main Content Area */}
+        <div className="flex-1 flex overflow-hidden">
+          {/* Mini Sidebar when collapsed */}
+          {sidebarCollapsed && (
+            <MiniSidebar
+              activeSection={activeSection}
+              onSectionChange={handleSectionChange}
+              activeTab={sidebarTab}
+              onTabChange={setSidebarTab}
+              onExpand={() => setSidebarCollapsed(false)}
+            />
           )}
 
-          {/* Notes List Panel */}
-          {!notesListCollapsed && (
-            <>
-              <ResizablePanel 
-                defaultSize={25} 
-                minSize={15} 
-                maxSize={40}
-                className="min-w-0"
-              >
-                <div className="h-full flex flex-col">
-                  {/* Tabs Bar */}
-                  <NoteTabs
-                    onAddNote={handleAddNote}
-                    onNavigateBack={handleNavigateBack}
-                    onNavigateForward={handleNavigateForward}
-                    canGoBack={historyIndex > 0}
-                    canGoForward={historyIndex < noteHistory.length - 1}
-                    onCollapseList={() => setNotesListCollapsed(true)}
-                    openNotes={openNotes}
-                    selectedNoteId={selectedNoteId}
-                    onTabSelect={handleNoteSelect}
-                    onTabClose={handleTabClose}
-                  />
-                  {/* Notes List */}
-                  <div className="flex-1 overflow-hidden">
-                    <NotesList
-                      notes={filteredNotes}
-                      selectedNoteId={selectedNoteId}
-                      onNoteSelect={handleNoteSelect}
-                      onAddNote={handleAddNote}
-                      onDeleteNote={handleDeleteNote}
-                      onRestoreNote={handleRestoreNote}
-                      onToggleFavorite={handleToggleFavorite}
-                      onArchiveNote={handleArchiveNote}
-                      searchQuery={searchQuery}
-                      onSearchChange={setSearchQuery}
+          <ResizablePanelGroup direction="horizontal" className="h-full">
+            {/* Sidebar Panel */}
+            {!sidebarCollapsed && (
+              <>
+                <ResizablePanel 
+                  defaultSize={15} 
+                  minSize={10} 
+                  maxSize={25}
+                  className="min-w-0"
+                >
+                  <div className="h-full">
+                    <Sidebar
                       activeSection={activeSection}
-                      onReorderNotes={(activeId, overId) => {
-                        setNotes((prev) => {
-                          const activeIndex = prev.findIndex(n => n.id === activeId);
-                          const overIndex = prev.findIndex(n => n.id === overId);
-                          if (activeIndex === -1 || overIndex === -1) return prev;
-                          const newNotes = [...prev];
-                          const [removed] = newNotes.splice(activeIndex, 1);
-                          newNotes.splice(overIndex, 0, removed);
-                          return newNotes;
-                        });
-                      }}
+                      onSectionChange={handleSectionChange}
+                      noteCounts={noteCounts}
+                      onClose={() => setSidebarOpen(false)}
+                      activeTab={sidebarTab}
+                      onTabChange={setSidebarTab}
+                      notebooks={notebooks}
+                      tags={displayTags}
+                      selectedNotebookId={selectedNotebookId}
+                      selectedTagId={selectedTagId}
+                      onNotebookSelect={setSelectedNotebookId}
+                      onTagSelect={setSelectedTagId}
+                      onAddNotebook={handleAddNotebook}
+                      onAddTag={handleAddTag}
+                      onCollapse={() => setSidebarCollapsed(true)}
+                      isCollapsible={true}
                     />
                   </div>
-                </div>
-              </ResizablePanel>
-              <ResizableHandle withHandle />
-            </>
-          )}
+                </ResizablePanel>
+                <ResizableHandle withHandle />
+              </>
+            )}
+
+            {/* Notes List Panel */}
+            {!notesListCollapsed && (
+              <>
+                <ResizablePanel 
+                  defaultSize={25} 
+                  minSize={15} 
+                  maxSize={40}
+                  className="min-w-0"
+                >
+                  <div className="h-full flex flex-col">
+                    {/* Notes List Header */}
+                    <div className="flex items-center justify-between px-3 py-2 border-b border-border">
+                      <span className="text-xs font-medium text-primary uppercase tracking-wide">Recent</span>
+                      <div className="flex items-center gap-1">
+                        <button className="p-1 text-muted-foreground hover:text-foreground transition-colors" title="Sort">
+                          <ArrowUpDown className="w-3.5 h-3.5" />
+                        </button>
+                        <button className="p-1 text-muted-foreground hover:text-foreground transition-colors" title="View">
+                          <List className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                    {/* Notes List */}
+                    <div className="flex-1 overflow-hidden">
+                      <NotesList
+                        notes={filteredNotes}
+                        selectedNoteId={selectedNoteId}
+                        onNoteSelect={handleNoteSelect}
+                        onAddNote={handleAddNote}
+                        onDeleteNote={handleDeleteNote}
+                        onRestoreNote={handleRestoreNote}
+                        onToggleFavorite={handleToggleFavorite}
+                        onArchiveNote={handleArchiveNote}
+                        searchQuery={searchQuery}
+                        onSearchChange={setSearchQuery}
+                        activeSection={activeSection}
+                        hideSearch={true}
+                        onReorderNotes={(activeId, overId) => {
+                          setNotes((prev) => {
+                            const activeIndex = prev.findIndex(n => n.id === activeId);
+                            const overIndex = prev.findIndex(n => n.id === overId);
+                            if (activeIndex === -1 || overIndex === -1) return prev;
+                            const newNotes = [...prev];
+                            const [removed] = newNotes.splice(activeIndex, 1);
+                            newNotes.splice(overIndex, 0, removed);
+                            return newNotes;
+                          });
+                        }}
+                      />
+                    </div>
+                  </div>
+                </ResizablePanel>
+                <ResizableHandle withHandle />
+              </>
+            )}
 
           {/* Editor Panel */}
           <ResizablePanel defaultSize={60} minSize={30} className="min-w-0">
@@ -579,6 +709,7 @@ const Index = () => {
             </div>
           </ResizablePanel>
         </ResizablePanelGroup>
+        </div>
       </div>
 
       {/* Mobile/Tablet Content */}
