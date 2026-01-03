@@ -31,7 +31,12 @@ import {
   Quote,
   Type,
   ChevronLeft,
-  MoreVertical
+  MoreVertical,
+  Monitor,
+  PanelLeft,
+  RefreshCw,
+  Minus,
+  Plus
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
@@ -576,28 +581,36 @@ export const NoteEditor = ({ note, onNoteChange, onClose, onToggleFavorite, onDe
       </div>
 
       {/* Status Bar */}
-      <div className="flex items-center justify-between px-3 py-1 bg-background border-t border-border text-xs text-muted-foreground">
+      <div className="flex items-center justify-between px-3 py-1.5 bg-background border-t border-border text-xs text-muted-foreground">
+        {/* Left side - Sync status */}
         <div className="flex items-center gap-2">
-          <span className="flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-          </span>
+          <span className="w-2 h-2 rounded-full bg-primary" />
+          <RefreshCw className="w-3.5 h-3.5 text-muted-foreground" />
         </div>
-        <div className="flex items-center gap-3">
+        
+        {/* Right side - View mode, zoom, word count, date */}
+        <div className="flex items-center gap-2">
           {/* View mode icons */}
-          <div className="hidden sm:flex items-center gap-1">
-            <button className="p-1 rounded hover:bg-muted transition-colors" title="Preview">
-              <Maximize2 className="w-3.5 h-3.5" />
+          <div className="hidden sm:flex items-center gap-0.5">
+            <button className="p-1 rounded hover:bg-muted transition-colors text-muted-foreground hover:text-foreground" title="Focus mode">
+              <Monitor className="w-3.5 h-3.5" />
+            </button>
+            <button className="p-1 rounded hover:bg-muted transition-colors text-muted-foreground hover:text-foreground" title="Split view">
+              <PanelLeft className="w-3.5 h-3.5" />
             </button>
           </div>
           
+          {/* Separator */}
+          <div className="hidden sm:block w-px h-4 bg-border" />
+          
           {/* Zoom controls */}
-          <div className="hidden sm:flex items-center gap-1">
-            <button className="p-0.5 rounded hover:bg-muted transition-colors text-muted-foreground hover:text-foreground" title="Zoom out">
-              <span className="text-sm font-medium px-1">−</span>
+          <div className="hidden sm:flex items-center gap-0">
+            <button className="p-1 rounded hover:bg-muted transition-colors text-muted-foreground hover:text-foreground" title="Zoom out">
+              <Minus className="w-3.5 h-3.5" />
             </button>
-            <span className="text-xs min-w-[36px] text-center">100%</span>
-            <button className="p-0.5 rounded hover:bg-muted transition-colors text-muted-foreground hover:text-foreground" title="Zoom in">
-              <span className="text-sm font-medium px-1">+</span>
+            <span className="text-xs min-w-[40px] text-center text-muted-foreground">100%</span>
+            <button className="p-1 rounded hover:bg-muted transition-colors text-muted-foreground hover:text-foreground" title="Zoom in">
+              <Plus className="w-3.5 h-3.5" />
             </button>
           </div>
           
@@ -606,15 +619,15 @@ export const NoteEditor = ({ note, onNoteChange, onClose, onToggleFavorite, onDe
           
           {/* Date & Time */}
           <span className="hidden md:inline text-muted-foreground">
-            {new Date().toLocaleDateString('id-ID', { 
-              day: '2-digit',
-              month: '2-digit', 
+            {new Date().toLocaleDateString('en-US', { 
+              month: '2-digit',
+              day: '2-digit', 
               year: 'numeric' 
-            }).replace(/\//g, '-')} {new Date().toLocaleTimeString('id-ID', { 
+            }).replace(/\//g, '-')} {new Date().toLocaleTimeString('en-US', { 
               hour: '2-digit', 
               minute: '2-digit',
               hour12: true
-            }).toUpperCase()}
+            })}
           </span>
         </div>
       </div>
