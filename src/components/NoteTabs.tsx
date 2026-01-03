@@ -1,4 +1,4 @@
-import { X, Plus, ChevronLeft, ChevronRight, FileText } from "lucide-react";
+import { X, Plus, ChevronLeft, ChevronRight, FileText, Image, Undo, Redo, Maximize2, List, Search, MoreVertical } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface OpenNote {
@@ -30,59 +30,59 @@ export const NoteTabs = ({
   canGoForward,
 }: NoteTabsProps) => {
   return (
-    <div className="flex items-center gap-1 px-2 py-1.5 bg-background border-b border-border overflow-x-auto scrollbar-none">
-      {/* Add Note Button */}
-      <button
-        onClick={onAddNote}
-        className="flex-shrink-0 w-7 h-7 rounded-full bg-primary flex items-center justify-center text-primary-foreground hover:bg-primary/90 transition-colors"
-        title="Add new note"
-      >
-        <Plus className="w-4 h-4" />
-      </button>
-
-      {/* Navigation Arrows */}
-      <button
-        onClick={onNavigateBack}
-        disabled={!canGoBack}
-        className={cn(
-          "flex-shrink-0 p-1 rounded transition-colors",
-          canGoBack
-            ? "text-muted-foreground hover:text-foreground hover:bg-muted"
-            : "text-muted-foreground/30 cursor-not-allowed"
-        )}
-        title="Go back"
-      >
-        <ChevronLeft className="w-4 h-4" />
-      </button>
-      <button
-        onClick={onNavigateForward}
-        disabled={!canGoForward}
-        className={cn(
-          "flex-shrink-0 p-1 rounded transition-colors",
-          canGoForward
-            ? "text-muted-foreground hover:text-foreground hover:bg-muted"
-            : "text-muted-foreground/30 cursor-not-allowed"
-        )}
-        title="Go forward"
-      >
-        <ChevronRight className="w-4 h-4" />
-      </button>
+    <div className="flex items-center gap-1 px-2 py-1 bg-background border-b border-border">
+      {/* Left side - Add button and navigation */}
+      <div className="flex items-center gap-0.5 flex-shrink-0">
+        <button
+          onClick={onAddNote}
+          className="w-7 h-7 rounded-full bg-primary flex items-center justify-center text-primary-foreground hover:bg-primary/90 transition-colors"
+          title="Add new note"
+        >
+          <Plus className="w-4 h-4" />
+        </button>
+        <button
+          onClick={onNavigateBack}
+          disabled={!canGoBack}
+          className={cn(
+            "p-1.5 rounded transition-colors",
+            canGoBack
+              ? "text-muted-foreground hover:text-foreground"
+              : "text-muted-foreground/30 cursor-not-allowed"
+          )}
+          title="Go back"
+        >
+          <ChevronLeft className="w-4 h-4" />
+        </button>
+        <button
+          onClick={onNavigateForward}
+          disabled={!canGoForward}
+          className={cn(
+            "p-1.5 rounded transition-colors",
+            canGoForward
+              ? "text-muted-foreground hover:text-foreground"
+              : "text-muted-foreground/30 cursor-not-allowed"
+          )}
+          title="Go forward"
+        >
+          <ChevronRight className="w-4 h-4" />
+        </button>
+      </div>
 
       {/* Tabs */}
-      <div className="flex items-center gap-1 flex-1 overflow-x-auto scrollbar-none ml-1">
+      <div className="flex items-center gap-0.5 flex-1 overflow-x-auto scrollbar-none">
         {openNotes.map((note) => (
           <div
             key={note.id}
             className={cn(
-              "group flex items-center gap-1.5 px-2.5 py-1 rounded text-sm cursor-pointer transition-colors max-w-[160px] flex-shrink-0",
+              "group flex items-center gap-1.5 px-2 py-1 rounded text-xs cursor-pointer transition-colors max-w-[140px] flex-shrink-0",
               activeNoteId === note.id
                 ? "bg-primary text-primary-foreground"
                 : "text-muted-foreground hover:bg-muted hover:text-foreground"
             )}
             onClick={() => onTabSelect(note.id)}
           >
-            <FileText className="w-3.5 h-3.5 flex-shrink-0" />
-            <span className="truncate flex-1 text-xs">{note.title || "Untitled"}</span>
+            <FileText className="w-3 h-3 flex-shrink-0" />
+            <span className="truncate flex-1">{note.title || "Untitled"}</span>
             <button
               onClick={(e) => {
                 e.stopPropagation();
@@ -98,6 +98,31 @@ export const NoteTabs = ({
             </button>
           </div>
         ))}
+      </div>
+
+      {/* Right side - Actions */}
+      <div className="flex items-center gap-0.5 flex-shrink-0 ml-auto">
+        <button className="p-1.5 text-muted-foreground hover:text-foreground transition-colors" title="Insert image">
+          <Image className="w-4 h-4" />
+        </button>
+        <button className="p-1.5 text-muted-foreground hover:text-foreground transition-colors" title="Undo">
+          <Undo className="w-4 h-4" />
+        </button>
+        <button className="p-1.5 text-muted-foreground hover:text-foreground transition-colors" title="Redo">
+          <Redo className="w-4 h-4" />
+        </button>
+        <button className="p-1.5 text-muted-foreground hover:text-foreground transition-colors" title="Fullscreen">
+          <Maximize2 className="w-4 h-4" />
+        </button>
+        <button className="p-1.5 text-muted-foreground hover:text-foreground transition-colors" title="View options">
+          <List className="w-4 h-4" />
+        </button>
+        <button className="p-1.5 text-muted-foreground hover:text-foreground transition-colors" title="Search">
+          <Search className="w-4 h-4" />
+        </button>
+        <button className="p-1.5 text-muted-foreground hover:text-foreground transition-colors" title="More options">
+          <MoreVertical className="w-4 h-4" />
+        </button>
       </div>
     </div>
   );
