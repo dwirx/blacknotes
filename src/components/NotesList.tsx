@@ -6,6 +6,7 @@ import {
   closestCenter,
   KeyboardSensor,
   PointerSensor,
+  TouchSensor,
   useSensor,
   useSensors,
   DragEndEvent,
@@ -105,11 +106,11 @@ const SortableNoteItem = ({
       onClick={() => onNoteSelect(note.id)}
     >
       <div className="flex items-start gap-2">
-        {/* Drag handle */}
+        {/* Drag handle - touch friendly */}
         <div
           {...attributes}
           {...listeners}
-          className="mt-1 p-1 cursor-grab active:cursor-grabbing text-muted-foreground/50 hover:text-muted-foreground transition-colors flex-shrink-0"
+          className="mt-1 p-2 -ml-1 cursor-grab active:cursor-grabbing text-muted-foreground/50 hover:text-muted-foreground active:text-primary transition-colors flex-shrink-0 touch-none"
           onClick={(e) => e.stopPropagation()}
         >
           <GripVertical className="w-4 h-4" />
@@ -205,6 +206,12 @@ export const NotesList = ({
     useSensor(PointerSensor, {
       activationConstraint: {
         distance: 8,
+      },
+    }),
+    useSensor(TouchSensor, {
+      activationConstraint: {
+        delay: 200,
+        tolerance: 5,
       },
     }),
     useSensor(KeyboardSensor, {
