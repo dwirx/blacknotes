@@ -472,7 +472,7 @@ const Index = () => {
                   />
                 </div>
               </ResizablePanel>
-              <ResizableHandle withHandle className="bg-border hover:bg-primary/50 transition-colors" />
+              <ResizableHandle withHandle />
             </>
           )}
 
@@ -524,7 +524,7 @@ const Index = () => {
                   </div>
                 </div>
               </ResizablePanel>
-              <ResizableHandle withHandle className="bg-border hover:bg-primary/50 transition-colors" />
+              <ResizableHandle withHandle />
             </>
           )}
 
