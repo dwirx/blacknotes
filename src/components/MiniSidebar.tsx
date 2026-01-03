@@ -9,7 +9,8 @@ import {
   Settings, 
   Home, 
   FolderOpen,
-  Notebook
+  PanelLeftOpen,
+  Menu
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -40,11 +41,21 @@ export const MiniSidebar = ({
   onExpand 
 }: MiniSidebarProps) => {
   return (
-    <aside 
-      className="w-12 h-full bg-sidebar flex flex-col border-r border-border"
-      onDoubleClick={onExpand}
-      title="Double-click to expand"
-    >
+    <aside className="w-12 h-full bg-sidebar flex flex-col border-r border-border">
+      {/* Expand Button */}
+      <div className="flex flex-col items-center py-2">
+        <button 
+          onClick={onExpand}
+          className="p-2 rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+          title="Expand sidebar"
+        >
+          <Menu className="w-4 h-4" />
+        </button>
+      </div>
+
+      {/* Separator */}
+      <div className="mx-2 border-t border-border" />
+
       {/* Tab Icons */}
       <div className="flex flex-col items-center gap-1 py-3">
         <button 
