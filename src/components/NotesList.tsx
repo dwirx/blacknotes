@@ -264,22 +264,6 @@ export const NotesList = ({
         </div>
       </div>
 
-      {/* Add Note & Navigation */}
-      <div className="flex items-center gap-2 px-3 py-1">
-        <button
-          onClick={onAddNote}
-          className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground hover:bg-primary/90 transition-colors"
-        >
-          <Plus className="w-4 h-4" />
-        </button>
-        <button className="p-1.5 text-muted-foreground hover:text-foreground transition-colors">
-          <ChevronLeft className="w-4 h-4" />
-        </button>
-        <button className="p-1.5 text-muted-foreground hover:text-foreground transition-colors">
-          <ChevronRight className="w-4 h-4" />
-        </button>
-      </div>
-
       {/* Notes List */}
       <div className="flex-1 overflow-hidden px-1">
         {notes.length === 0 ? (

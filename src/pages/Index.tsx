@@ -494,10 +494,6 @@ const Index = () => {
                 <div className="h-full flex flex-col">
                   {/* Tabs Bar */}
                   <NoteTabs
-                    openNotes={openNotes}
-                    activeNoteId={selectedNoteId}
-                    onTabSelect={setSelectedNoteId}
-                    onTabClose={handleTabClose}
                     onAddNote={handleAddNote}
                     onNavigateBack={handleNavigateBack}
                     onNavigateForward={handleNavigateForward}
@@ -589,10 +585,6 @@ const Index = () => {
         {/* Tabs Bar */}
         <div className="hidden sm:block">
           <NoteTabs
-            openNotes={openNotes}
-            activeNoteId={selectedNoteId}
-            onTabSelect={setSelectedNoteId}
-            onTabClose={handleTabClose}
             onAddNote={handleAddNote}
             onNavigateBack={handleNavigateBack}
             onNavigateForward={handleNavigateForward}
