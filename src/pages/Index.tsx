@@ -3,8 +3,6 @@ import { Sidebar } from "@/components/Sidebar";
 import { NotesList } from "@/components/NotesList";
 import { NoteEditor } from "@/components/NoteEditor";
 import { NoteTabs } from "@/components/NoteTabs";
-import { NotebooksView } from "@/components/NotebooksView";
-import { TagsView } from "@/components/TagsView";
 import { useToast } from "@/hooks/use-toast";
 import { Menu, X } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -416,35 +414,16 @@ const Index = () => {
           onClose={() => setSidebarOpen(false)}
           activeTab={sidebarTab}
           onTabChange={setSidebarTab}
+          notebooks={notebooks}
+          tags={displayTags}
+          selectedNotebookId={selectedNotebookId}
+          selectedTagId={selectedTagId}
+          onNotebookSelect={setSelectedNotebookId}
+          onTagSelect={setSelectedTagId}
+          onAddNotebook={handleAddNotebook}
+          onAddTag={handleAddTag}
         />
       </div>
-
-      {/* Secondary Sidebar based on tab */}
-      {sidebarTab === "notebooks" && (
-        <div className="hidden md:block">
-          <NotebooksView
-            notebooks={notebooks}
-            selectedNotebookId={selectedNotebookId}
-            onNotebookSelect={setSelectedNotebookId}
-            onAddNotebook={handleAddNotebook}
-            onDeleteNotebook={handleDeleteNotebook}
-            onRenameNotebook={handleRenameNotebook}
-          />
-        </div>
-      )}
-
-      {sidebarTab === "tags" && (
-        <div className="hidden md:block">
-          <TagsView
-            tags={displayTags}
-            selectedTagId={selectedTagId}
-            onTagSelect={setSelectedTagId}
-            onAddTag={handleAddTag}
-            onDeleteTag={handleDeleteTag}
-            onRenameTag={handleRenameTag}
-          />
-        </div>
-      )}
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col pt-14 md:pt-0 overflow-hidden">
