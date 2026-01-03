@@ -531,58 +531,48 @@ export const NoteEditor = ({ note, onNoteChange, onClose, onToggleFavorite, onDe
 
   return (
     <div className="flex-1 h-full bg-editor flex flex-col">
-      {/* Header with actions - simplified, no duplicate tab */}
-      <div className="flex items-center justify-between px-3 py-2 bg-background border-b border-border">
-        <div className="flex items-center gap-2">
-          {/* Back button for mobile */}
-          {onBack && (
-            <button
-              onClick={onBack}
-              className="sm:hidden p-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-            >
-              <ChevronLeft className="w-5 h-5" />
-            </button>
+      {/* Header with actions only - no duplicate tab */}
+      <div className="flex items-center justify-end px-3 py-2 bg-background border-b border-border gap-1">
+        {/* Back button for mobile */}
+        {onBack && (
+          <button
+            onClick={onBack}
+            className="sm:hidden p-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors mr-auto"
+          >
+            <ChevronLeft className="w-5 h-5" />
+          </button>
+        )}
+        <button 
+          onClick={() => onToggleFavorite(note.id)}
+          className={cn(
+            "p-1.5 transition-colors rounded",
+            note.isFavorite 
+              ? "text-primary hover:text-primary/80" 
+              : "text-muted-foreground hover:text-foreground"
           )}
-          <div className="flex items-center gap-2 px-2 py-1 bg-muted/30 rounded text-sm">
-            <div className="w-4 h-4 rounded bg-muted flex items-center justify-center">
-              <span className="text-[10px]">📄</span>
-            </div>
-            <span className="text-foreground truncate max-w-[120px] sm:max-w-[180px]">
-              {title || "Untitled"}
-            </span>
-            <button 
-              onClick={onClose}
-              className="text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <X className="w-3 h-3" />
-            </button>
-          </div>
-        </div>
-        <div className="flex items-center gap-1">
-          <button 
-            onClick={() => onToggleFavorite(note.id)}
-            className={cn(
-              "p-1.5 transition-colors rounded",
-              note.isFavorite 
-                ? "text-primary hover:text-primary/80" 
-                : "text-muted-foreground hover:text-foreground"
-            )}
-          >
-            <Star className={cn("w-4 h-4", note.isFavorite && "fill-current")} />
-          </button>
-          <button 
-            onClick={() => onDelete(note.id)}
-            className="p-1.5 text-muted-foreground hover:text-destructive transition-colors rounded"
-          >
-            <Trash2 className="w-4 h-4" />
-          </button>
-          <button className="p-1.5 text-muted-foreground hover:text-foreground transition-colors">
-            <Maximize2 className="w-4 h-4" />
-          </button>
-          <button className="p-1.5 text-muted-foreground hover:text-foreground transition-colors">
-            <Search className="w-4 h-4" />
-          </button>
-        </div>
+          title="Toggle favorite"
+        >
+          <Star className={cn("w-4 h-4", note.isFavorite && "fill-current")} />
+        </button>
+        <button 
+          onClick={() => onDelete(note.id)}
+          className="p-1.5 text-muted-foreground hover:text-destructive transition-colors rounded"
+          title="Delete note"
+        >
+          <Trash2 className="w-4 h-4" />
+        </button>
+        <button 
+          className="p-1.5 text-muted-foreground hover:text-foreground transition-colors rounded"
+          title="Fullscreen"
+        >
+          <Maximize2 className="w-4 h-4" />
+        </button>
+        <button 
+          className="p-1.5 text-muted-foreground hover:text-foreground transition-colors rounded"
+          title="Search in note"
+        >
+          <Search className="w-4 h-4" />
+        </button>
       </div>
 
       {/* Toolbar */}

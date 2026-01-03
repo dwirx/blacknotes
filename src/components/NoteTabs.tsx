@@ -34,7 +34,7 @@ export const NoteTabs = ({
       {/* Add Note Button */}
       <button
         onClick={onAddNote}
-        className="flex-shrink-0 w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground hover:bg-primary/90 transition-colors"
+        className="flex-shrink-0 w-7 h-7 rounded-full bg-primary flex items-center justify-center text-primary-foreground hover:bg-primary/90 transition-colors"
         title="Add new note"
       >
         <Plus className="w-4 h-4" />
@@ -45,7 +45,7 @@ export const NoteTabs = ({
         onClick={onNavigateBack}
         disabled={!canGoBack}
         className={cn(
-          "flex-shrink-0 p-1.5 rounded transition-colors",
+          "flex-shrink-0 p-1 rounded transition-colors",
           canGoBack
             ? "text-muted-foreground hover:text-foreground hover:bg-muted"
             : "text-muted-foreground/30 cursor-not-allowed"
@@ -58,7 +58,7 @@ export const NoteTabs = ({
         onClick={onNavigateForward}
         disabled={!canGoForward}
         className={cn(
-          "flex-shrink-0 p-1.5 rounded transition-colors",
+          "flex-shrink-0 p-1 rounded transition-colors",
           canGoForward
             ? "text-muted-foreground hover:text-foreground hover:bg-muted"
             : "text-muted-foreground/30 cursor-not-allowed"
@@ -69,27 +69,27 @@ export const NoteTabs = ({
       </button>
 
       {/* Tabs */}
-      <div className="flex items-center gap-1 flex-1 overflow-x-auto scrollbar-none">
+      <div className="flex items-center gap-1 flex-1 overflow-x-auto scrollbar-none ml-1">
         {openNotes.map((note) => (
           <div
             key={note.id}
             className={cn(
-              "group flex items-center gap-2 px-3 py-1.5 rounded-md text-sm cursor-pointer transition-colors max-w-[180px] flex-shrink-0",
+              "group flex items-center gap-1.5 px-2.5 py-1 rounded text-sm cursor-pointer transition-colors max-w-[160px] flex-shrink-0",
               activeNoteId === note.id
-                ? "bg-primary/10 text-primary border border-primary/30"
+                ? "bg-primary text-primary-foreground"
                 : "text-muted-foreground hover:bg-muted hover:text-foreground"
             )}
             onClick={() => onTabSelect(note.id)}
           >
-            <FileText className="w-4 h-4 flex-shrink-0" />
-            <span className="truncate flex-1">{note.title || "Untitled"}</span>
+            <FileText className="w-3.5 h-3.5 flex-shrink-0" />
+            <span className="truncate flex-1 text-xs">{note.title || "Untitled"}</span>
             <button
               onClick={(e) => {
                 e.stopPropagation();
                 onTabClose(note.id);
               }}
               className={cn(
-                "flex-shrink-0 p-0.5 rounded hover:bg-muted-foreground/20 transition-colors",
+                "flex-shrink-0 p-0.5 rounded hover:bg-white/20 transition-colors",
                 activeNoteId === note.id ? "opacity-100" : "opacity-0 group-hover:opacity-100"
               )}
               title="Close tab"
