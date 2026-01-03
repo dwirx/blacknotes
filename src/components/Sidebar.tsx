@@ -1,4 +1,4 @@
-import { FileText, Star, Bell, BookOpen, Trash2, Archive, Hash, Copy, Settings } from "lucide-react";
+import { FileText, Star, Bell, BookOpen, Trash2, Archive, Hash, Copy, Settings, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface SidebarProps {
@@ -44,7 +44,7 @@ export const Sidebar = ({ activeSection, onSectionChange, noteCounts }: SidebarP
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 px-2 py-2 space-y-1">
+      <nav className="flex-1 px-2 py-2 space-y-1 overflow-y-auto">
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = activeSection === item.id;
@@ -55,20 +55,24 @@ export const Sidebar = ({ activeSection, onSectionChange, noteCounts }: SidebarP
               key={item.id}
               onClick={() => onSectionChange(item.id)}
               className={cn(
-                "w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-colors",
+                "w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-all duration-200",
                 isActive
-                  ? "bg-primary text-primary-foreground"
-                  : "text-sidebar-foreground hover:bg-sidebar-accent"
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
               )}
             >
-              <Icon className="w-4 h-4" />
-              <span className="flex-1 text-left">{item.label}</span>
-              <span className={cn(
-                "text-xs",
-                isActive ? "text-primary-foreground/70" : "text-muted-foreground"
-              )}>
-                {count}
-              </span>
+              <Icon className="w-4 h-4 flex-shrink-0" />
+              <span className="flex-1 text-left truncate">{item.label}</span>
+              {count > 0 && (
+                <span className={cn(
+                  "text-xs px-1.5 py-0.5 rounded-full min-w-[20px] text-center",
+                  isActive 
+                    ? "bg-primary-foreground/20 text-primary-foreground" 
+                    : "bg-muted text-muted-foreground"
+                )}>
+                  {count}
+                </span>
+              )}
             </button>
           );
         })}
@@ -77,7 +81,10 @@ export const Sidebar = ({ activeSection, onSectionChange, noteCounts }: SidebarP
       {/* Footer */}
       <div className="px-4 py-3 border-t border-border flex items-center gap-2">
         <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-        <Settings className="w-4 h-4 text-muted-foreground" />
+        <span className="text-xs text-muted-foreground">Synced</span>
+        <button className="ml-auto text-muted-foreground hover:text-foreground transition-colors">
+          <Settings className="w-4 h-4" />
+        </button>
       </div>
     </aside>
   );
