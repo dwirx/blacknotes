@@ -531,66 +531,22 @@ export const NoteEditor = ({ note, onNoteChange, onClose, onToggleFavorite, onDe
 
   return (
     <div className="flex-1 h-full bg-editor flex flex-col">
-      {/* Header with actions only - no duplicate tab */}
-      <div className="flex items-center justify-end px-3 py-2 bg-background border-b border-border gap-1">
-        {/* Back button for mobile */}
-        {onBack && (
-          <button
-            onClick={onBack}
-            className="sm:hidden p-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors mr-auto"
-          >
-            <ChevronLeft className="w-5 h-5" />
-          </button>
-        )}
-        <button 
-          onClick={() => onToggleFavorite(note.id)}
-          className={cn(
-            "p-1.5 transition-colors rounded",
-            note.isFavorite 
-              ? "text-primary hover:text-primary/80" 
-              : "text-muted-foreground hover:text-foreground"
-          )}
-          title="Toggle favorite"
-        >
-          <Star className={cn("w-4 h-4", note.isFavorite && "fill-current")} />
-        </button>
-        <button 
-          onClick={() => onDelete(note.id)}
-          className="p-1.5 text-muted-foreground hover:text-destructive transition-colors rounded"
-          title="Delete note"
-        >
-          <Trash2 className="w-4 h-4" />
-        </button>
-        <button 
-          className="p-1.5 text-muted-foreground hover:text-foreground transition-colors rounded"
-          title="Fullscreen"
-        >
-          <Maximize2 className="w-4 h-4" />
-        </button>
-        <button 
-          className="p-1.5 text-muted-foreground hover:text-foreground transition-colors rounded"
-          title="Search in note"
-        >
-          <Search className="w-4 h-4" />
-        </button>
-      </div>
-
-      {/* Toolbar */}
+      {/* Toolbar - directly without separate header */}
       <Toolbar editor={editor} fontSize={fontSize} setFontSize={setFontSize} />
 
       {/* Editor Content */}
-      <div className="flex-1 overflow-y-auto p-4 md:p-6">
-        <div className="max-w-3xl mx-auto">
+      <div className="flex-1 overflow-y-auto p-4 md:p-8 lg:p-12">
+        <div className="max-w-4xl mx-auto">
           <input
             type="text"
             placeholder="Note title"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            className="w-full bg-transparent text-2xl md:text-4xl font-light text-foreground placeholder:text-muted-foreground/50 focus:outline-none mb-2"
+            className="w-full bg-transparent text-3xl md:text-4xl lg:text-5xl font-light text-foreground placeholder:text-muted-foreground/40 focus:outline-none mb-3"
           />
           
           {/* Tags */}
-          <div className="flex items-center flex-wrap gap-2 mb-4">
+          <div className="flex items-center flex-wrap gap-2 mb-6">
             {tags.map((tag) => (
               <span
                 key={tag}
@@ -611,7 +567,7 @@ export const NoteEditor = ({ note, onNoteChange, onClose, onToggleFavorite, onDe
               value={tagInput}
               onChange={(e) => setTagInput(e.target.value)}
               onKeyDown={handleTagKeyDown}
-              className="flex-1 min-w-[80px] bg-transparent text-sm text-muted-foreground placeholder:text-muted-foreground/50 focus:outline-none py-1"
+              className="flex-1 min-w-[80px] bg-transparent text-sm text-muted-foreground placeholder:text-muted-foreground/40 focus:outline-none py-1"
             />
           </div>
           
@@ -620,16 +576,27 @@ export const NoteEditor = ({ note, onNoteChange, onClose, onToggleFavorite, onDe
       </div>
 
       {/* Status Bar */}
-      <div className="flex items-center justify-between px-4 py-2 bg-background border-t border-border text-xs text-muted-foreground">
-        <div className="flex items-center gap-2">
+      <div className="flex items-center justify-between px-4 py-1.5 bg-background border-t border-border text-xs text-muted-foreground">
+        <div className="flex items-center gap-3">
           <span className="text-primary flex items-center gap-1">
             <span className="w-1.5 h-1.5 rounded-full bg-primary" />
             Saved
           </span>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-4">
+          <span className="hidden sm:inline">100%</span>
           <span>{wordCount} words</span>
-          <span>{charCount} chars</span>
+          <span className="text-muted-foreground">
+            {new Date().toLocaleDateString('en-US', { 
+              month: '2-digit', 
+              day: '2-digit', 
+              year: 'numeric' 
+            }).replace(/\//g, '-')} {new Date().toLocaleTimeString([], { 
+              hour: '2-digit', 
+              minute: '2-digit' 
+            })}
+          </span>
+          <span className="text-primary">✓</span>
         </div>
       </div>
     </div>
