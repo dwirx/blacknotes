@@ -507,6 +507,10 @@ const Index = () => {
                     canGoBack={historyIndex > 0}
                     canGoForward={historyIndex < noteHistory.length - 1}
                     onCollapseList={() => setNotesListCollapsed(true)}
+                    openNotes={openNotes}
+                    selectedNoteId={selectedNoteId}
+                    onTabSelect={handleNoteSelect}
+                    onTabClose={handleTabClose}
                   />
                   {/* Notes List */}
                   <div className="flex-1 overflow-hidden">
