@@ -4,7 +4,7 @@ import { NotesList } from "@/components/NotesList";
 import { NoteEditor } from "@/components/NoteEditor";
 import { NoteTabs } from "@/components/NoteTabs";
 import { useToast } from "@/hooks/use-toast";
-import { Menu, X, PanelLeft } from "lucide-react";
+import { Menu, X, PanelLeft, Plus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   ResizableHandle,
@@ -575,22 +575,24 @@ const Index = () => {
       </div>
 
       {/* Mobile/Tablet Content */}
-      <div className="lg:hidden flex-1 flex flex-col pt-12 overflow-hidden min-w-0">
-        {/* Tabs Bar */}
-        <div className="hidden sm:block">
-          <NoteTabs
-            onAddNote={handleAddNote}
-            onNavigateBack={handleNavigateBack}
-            onNavigateForward={handleNavigateForward}
-            canGoBack={historyIndex > 0}
-            canGoForward={historyIndex < noteHistory.length - 1}
-          />
+      <div className="lg:hidden flex-1 flex flex-col pt-14 overflow-hidden min-w-0">
+        {/* Mobile Add Button - Fixed */}
+        <div className="flex items-center gap-2 px-3 py-2 bg-background border-b border-border">
+          <button
+            onClick={handleAddNote}
+            className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground hover:bg-primary/90 transition-colors flex-shrink-0"
+          >
+            <Plus className="w-4 h-4" />
+          </button>
+          <span className="text-xs text-muted-foreground flex-1">
+            {activeSection.charAt(0).toUpperCase() + activeSection.slice(1)}
+          </span>
         </div>
 
         <div className="flex-1 flex flex-row overflow-hidden">
           {/* Notes List */}
           <div className={cn(
-            "transition-all duration-300 ease-in-out overflow-hidden flex-shrink-0 w-full sm:w-[280px] md:w-[300px]",
+            "transition-all duration-300 ease-in-out overflow-hidden flex-shrink-0 w-full sm:w-[280px] md:w-[320px]",
             notesListOpen ? "block" : "hidden",
             selectedNoteId ? "hidden sm:block" : "block"
           )}>
@@ -637,7 +639,10 @@ const Index = () => {
               onClose={handleCloseNote}
               onToggleFavorite={handleToggleFavorite}
               onDelete={handleDeleteNote}
-              onBack={() => setNotesListOpen(true)}
+              onBack={() => {
+                setSelectedNoteId(null);
+                setNotesListOpen(true);
+              }}
             />
           </div>
         </div>
