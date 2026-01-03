@@ -4,7 +4,7 @@ import { NotesList } from "@/components/NotesList";
 import { NoteEditor } from "@/components/NoteEditor";
 import { NoteTabs } from "@/components/NoteTabs";
 import { useToast } from "@/hooks/use-toast";
-import { Menu, X, PanelLeft, Plus } from "lucide-react";
+import { Menu, X, PanelLeft, Plus, PanelRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   ResizableHandle,
@@ -493,6 +493,7 @@ const Index = () => {
                     onNavigateForward={handleNavigateForward}
                     canGoBack={historyIndex > 0}
                     canGoForward={historyIndex < noteHistory.length - 1}
+                    onCollapseList={() => setNotesListCollapsed(true)}
                   />
                   {/* Notes List */}
                   <div className="flex-1 overflow-hidden">
@@ -548,7 +549,7 @@ const Index = () => {
                       className="p-1.5 rounded text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
                       title="Show notes list"
                     >
-                      <Menu className="w-4 h-4" />
+                      <PanelRight className="w-4 h-4" />
                     </button>
                   )}
                 </div>

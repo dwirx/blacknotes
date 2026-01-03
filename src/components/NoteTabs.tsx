@@ -1,4 +1,4 @@
-import { X, Plus, ChevronLeft, ChevronRight, Image, Undo, Redo, Maximize2 } from "lucide-react";
+import { Plus, ChevronLeft, ChevronRight, Image, Undo, Redo, Maximize2, PanelRightClose } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface NoteTabsProps {
@@ -7,6 +7,7 @@ interface NoteTabsProps {
   onNavigateForward: () => void;
   canGoBack: boolean;
   canGoForward: boolean;
+  onCollapseList?: () => void;
 }
 
 export const NoteTabs = ({
@@ -15,6 +16,7 @@ export const NoteTabs = ({
   onNavigateForward,
   canGoBack,
   canGoForward,
+  onCollapseList,
 }: NoteTabsProps) => {
   return (
     <div className="flex items-center gap-1 px-3 py-2 bg-background border-b border-border">
@@ -69,6 +71,15 @@ export const NoteTabs = ({
         <button className="p-1.5 text-muted-foreground hover:text-foreground transition-colors" title="Fullscreen">
           <Maximize2 className="w-4 h-4" />
         </button>
+        {onCollapseList && (
+          <button 
+            onClick={onCollapseList}
+            className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded transition-colors" 
+            title="Hide notes list"
+          >
+            <PanelRightClose className="w-4 h-4" />
+          </button>
+        )}
       </div>
     </div>
   );
