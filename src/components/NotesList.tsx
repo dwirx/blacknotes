@@ -43,6 +43,13 @@ export const NotesList = ({
   onSearchChange,
   activeSection,
 }: NotesListProps) => {
+  // Strip HTML tags from preview text
+  const stripHtml = (html: string) => {
+    const tmp = document.createElement("div");
+    tmp.innerHTML = html;
+    return tmp.textContent || tmp.innerText || "";
+  };
+
   const formatDate = (date: Date) => {
     const now = new Date();
     const diffTime = Math.abs(now.getTime() - date.getTime());
@@ -59,7 +66,7 @@ export const NotesList = ({
   };
 
   return (
-    <div className="w-full md:w-[300px] h-full bg-notesList flex flex-col border-r border-border">
+    <div className="w-full h-full bg-notesList flex flex-col border-r border-border">
       {/* Search Header */}
       <div className="flex items-center gap-2 px-3 py-3">
         <div className="flex-1 relative">
@@ -140,7 +147,7 @@ export const NotesList = ({
                       )}
                     </div>
                     <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                      {note.preview || "No content"}
+                      {stripHtml(note.preview) || "No content"}
                     </p>
                     <div className="flex items-center gap-2 mt-2 flex-wrap">
                       <span className="text-xs text-muted-foreground">
