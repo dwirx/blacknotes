@@ -1,16 +1,17 @@
 /**
- * Cryptography utilities for HadesNotes vault
+ * Cryptography utilities for HadesNotes vault (Legacy v1)
  * Supports multiple encryption algorithms:
  * - AES-256-GCM (Web Crypto API)
  * - ChaCha20-Poly1305 (TweetNaCl - XSalsa20-Poly1305)
+ * 
+ * NOTE: For new vaults, use crypto-v2.ts with Argon2id + XChaCha20-Poly1305
  */
 
 import * as bip39 from 'bip39';
 import nacl from 'tweetnacl';
-import { encodeBase64, decodeBase64, encodeUTF8, decodeUTF8 } from 'tweetnacl-util';
+import { encodeBase64, decodeBase64 } from 'tweetnacl-util';
 
 // Constants
-const PBKDF2_ITERATIONS = 100000;
 const KEY_LENGTH = 32; // 256 bits
 
 // Encryption algorithm types
@@ -43,7 +44,7 @@ export async function deriveKeyFromMnemonic(mnemonic: string, salt: string = 'ha
   const seed = await bip39.mnemonicToSeed(normalizedMnemonic, salt);
 
   // Use first 32 bytes as encryption key
-  return new Uint8Array(seed.slice(0, KEY_LENGTH));
+  return new Uint8Array(seed.subarray(0, KEY_LENGTH));
 }
 
 /**
@@ -68,10 +69,10 @@ async function encryptAES256GCM(data: string, key: Uint8Array): Promise<string> 
   const encoder = new TextEncoder();
   const dataBuffer = encoder.encode(data);
 
-  // Import key
+  // Import key - use ArrayBuffer to avoid TypeScript issues
   const cryptoKey = await crypto.subtle.importKey(
     'raw',
-    key,
+    key.buffer.slice(key.byteOffset, key.byteOffset + key.byteLength) as ArrayBuffer,
     { name: 'AES-GCM' },
     false,
     ['encrypt']
@@ -79,7 +80,7 @@ async function encryptAES256GCM(data: string, key: Uint8Array): Promise<string> 
 
   // Encrypt
   const encrypted = await crypto.subtle.encrypt(
-    { name: 'AES-GCM', iv },
+    { name: 'AES-GCM', iv: iv.buffer.slice(iv.byteOffset, iv.byteOffset + iv.byteLength) as ArrayBuffer },
     cryptoKey,
     dataBuffer
   );
@@ -103,10 +104,10 @@ async function decryptAES256GCM(encryptedData: string, key: Uint8Array): Promise
     const iv = combined.slice(0, 12);
     const encrypted = combined.slice(12);
 
-    // Import key
+    // Import key - use ArrayBuffer to avoid TypeScript issues
     const cryptoKey = await crypto.subtle.importKey(
       'raw',
-      key,
+      key.buffer.slice(key.byteOffset, key.byteOffset + key.byteLength) as ArrayBuffer,
       { name: 'AES-GCM' },
       false,
       ['decrypt']
@@ -114,7 +115,7 @@ async function decryptAES256GCM(encryptedData: string, key: Uint8Array): Promise
 
     // Decrypt
     const decrypted = await crypto.subtle.decrypt(
-      { name: 'AES-GCM', iv },
+      { name: 'AES-GCM', iv: iv.buffer.slice(iv.byteOffset, iv.byteOffset + iv.byteLength) as ArrayBuffer },
       cryptoKey,
       encrypted
     );
@@ -132,7 +133,8 @@ async function decryptAES256GCM(encryptedData: string, key: Uint8Array): Promise
  */
 function encryptChaCha20(data: string, key: Uint8Array): string {
   const nonce = generateNonce();
-  const messageUint8 = encodeUTF8(data);
+  const encoder = new TextEncoder();
+  const messageUint8 = encoder.encode(data);
   const encrypted = nacl.secretbox(messageUint8, nonce, key);
 
   // Combine nonce and encrypted data
@@ -161,7 +163,8 @@ function decryptChaCha20(encryptedData: string, key: Uint8Array): string | null 
       return null;
     }
 
-    return decodeUTF8(decrypted);
+    const decoder = new TextDecoder();
+    return decoder.decode(decrypted);
   } catch (error) {
     console.error('ChaCha20 decryption error:', error);
     return null;
