@@ -14,13 +14,15 @@ import {
   Plus,
   Notebook,
   PanelLeftClose,
-  CheckCircle2
+  CheckCircle2,
+  LogOut
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { ThemeToggle } from "./ThemeToggle";
 import { AppSettings } from "./AppSettings";
 import { BlackNotesLogo } from "./BlackNotesLogo";
+import { LogoutButton } from "./LogoutButton";
 
 type SidebarTab = "home" | "notebooks" | "tags";
 
@@ -353,6 +355,7 @@ export const Sidebar = ({
         <div className="flex items-center gap-1">
           <ThemeToggle />
           <AppSettings autoSaveDelay={500} searchDelay={300} />
+          <LogoutButton variant="icon" showLabel={false} />
 
           {onCollapse && (
             <button

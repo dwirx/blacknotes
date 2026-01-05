@@ -1,5 +1,5 @@
 import { memo, useState } from 'react';
-import { Settings, Zap, Palette, Keyboard, Info, Gauge, Moon, Sun, Laptop } from 'lucide-react';
+import { Settings, Zap, Palette, Keyboard, Info, Gauge, Moon, Sun, Laptop, Shield } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -12,6 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Slider } from '@/components/ui/slider';
+import { VaultSettings } from '@/components/VaultSettings';
 import { cn } from '@/lib/utils';
 
 interface SettingsProps {
@@ -19,6 +20,7 @@ interface SettingsProps {
   searchDelay?: number;
   onAutoSaveDelayChange?: (delay: number) => void;
   onSearchDelayChange?: (delay: number) => void;
+  onVaultDeleted?: () => void;
 }
 
 export const AppSettings = memo(({
@@ -26,12 +28,14 @@ export const AppSettings = memo(({
   searchDelay = 300,
   onAutoSaveDelayChange,
   onSearchDelayChange,
+  onVaultDeleted,
 }: SettingsProps) => {
   const [localAutoSaveDelay, setLocalAutoSaveDelay] = useState(autoSaveDelay);
   const [localSearchDelay, setLocalSearchDelay] = useState(searchDelay);
+  const [open, setOpen] = useState(false);
 
   return (
-    <Dialog>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <button
           className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-muted rounded transition-colors"
@@ -40,7 +44,7 @@ export const AppSettings = memo(({
           <Settings className="w-4 h-4" />
         </button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[650px] max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Settings className="w-5 h-5 text-primary" />
@@ -51,8 +55,12 @@ export const AppSettings = memo(({
           </DialogDescription>
         </DialogHeader>
 
-        <Tabs defaultValue="performance" className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
+        <Tabs defaultValue="vault" className="w-full">
+          <TabsList className="grid w-full grid-cols-5">
+            <TabsTrigger value="vault" className="flex items-center gap-1.5">
+              <Shield className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Vault</span>
+            </TabsTrigger>
             <TabsTrigger value="performance" className="flex items-center gap-1.5">
               <Zap className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">Performance</span>
@@ -70,6 +78,14 @@ export const AppSettings = memo(({
               <span className="hidden sm:inline">About</span>
             </TabsTrigger>
           </TabsList>
+
+          {/* Vault Tab */}
+          <TabsContent value="vault" className="mt-4">
+            <VaultSettings onVaultDeleted={() => {
+              setOpen(false);
+              onVaultDeleted?.();
+            }} />
+          </TabsContent>
 
           {/* Performance Tab */}
           <TabsContent value="performance" className="space-y-4 mt-4">

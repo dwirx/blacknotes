@@ -10,11 +10,13 @@ import {
   Home,
   FolderOpen,
   Menu,
-  CheckCircle2
+  CheckCircle2,
+  LogOut
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "./ThemeToggle";
 import { AppSettings } from "./AppSettings";
+import { LogoutButton } from "./LogoutButton";
 
 type SidebarTab = "home" | "notebooks" | "tags";
 
@@ -130,6 +132,7 @@ export const MiniSidebar = ({
         <CheckCircle2 className="w-3.5 h-3.5 text-green-500" title="All changes saved" />
         <ThemeToggle className="p-2" />
         <AppSettings autoSaveDelay={500} searchDelay={300} />
+        <LogoutButton variant="icon" showLabel={false} />
       </div>
     </aside>
   );
