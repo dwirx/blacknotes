@@ -8,6 +8,7 @@ import { NoteEditor } from "@/components/NoteEditor";
 import { NoteTabs } from "@/components/NoteTabs";
 import { AppSettings } from "@/components/AppSettings";
 import { BlackNotesLogo } from "@/components/BlackNotesLogo";
+import NotesImportExport from "@/components/ImportExportNotes";
 import { useToast } from "@/hooks/use-toast";
 import { 
   Menu, 
@@ -467,6 +468,11 @@ const Index = () => {
     }
   }, [allTags]);
 
+  // Import notes handler
+  const handleImportNotes = useCallback((importedNotes: Note[]) => {
+    setNotes((prev) => [...importedNotes, ...prev]);
+  }, []);
+
   // Compute tags from notes
   const computedTags = getTagsWithCounts();
   const displayTags = allTags.length > 0 ? allTags : computedTags;
@@ -616,6 +622,11 @@ const Index = () => {
 
           {/* Right side - Actions */}
           <div className="flex items-center gap-0.5 px-2 flex-shrink-0 border-l border-border">
+            <NotesImportExport 
+              notes={notes} 
+              onImportNotes={handleImportNotes}
+              selectedNote={selectedNote}
+            />
             <AppSettings autoSaveDelay={500} searchDelay={300} />
           </div>
         </div>

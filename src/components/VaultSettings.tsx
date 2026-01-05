@@ -177,7 +177,7 @@ export const VaultSettings = memo(({ onVaultDeleted }: VaultSettingsProps) => {
 
       // Create encrypted backup
       const backup = await createVaultBackup(
-        { notes: notes as any, notebooks, tags, settings },
+        { notes: notes as unknown[], notebooks, tags, settings },
         encryptionKey,
         vaultId,
         encryptionAlgorithm
@@ -263,10 +263,10 @@ export const VaultSettings = memo(({ onVaultDeleted }: VaultSettingsProps) => {
       await db.clearAll();
       await db.importData({ 
         data: {
-          notes: data.notes as any,
-          notebooks: data.notebooks as any,
-          tags: data.tags as any,
-          settings: data.settings as any,
+          notes: data.notes as unknown[],
+          notebooks: data.notebooks as unknown[],
+          tags: data.tags as unknown[],
+          settings: data.settings as Record<string, unknown>,
         }
       });
 

@@ -55,21 +55,21 @@ Implementasi fitur logout, perbaikan tampilan login, dan fitur "Remember Me" unt
 - [ ] 3. Checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
-- [-] 4. Buat komponen LogoutConfirmationDialog
+- [x] 4. Buat komponen LogoutConfirmationDialog
   - [x] 4.1 Buat file LogoutConfirmationDialog.tsx
     - Implementasi dialog dengan opsi Cancel dan Logout
     - Tambahkan checkbox untuk "Keep Remember Me" jika Remember Me aktif
     - Styling sesuai dark theme aplikasi
     - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5_
 
-- [-] 5. Buat komponen LogoutButton
+- [x] 5. Buat komponen LogoutButton
   - [x] 5.1 Buat file LogoutButton.tsx
     - Implementasi tombol logout dengan icon
     - Integrasi dengan LogoutConfirmationDialog
     - Styling yang konsisten dengan aplikasi
     - _Requirements: 1.5, 1.6_
 
-- [-] 6. Perbaiki tampilan UnlockVault (Login)
+- [x] 6. Perbaiki tampilan UnlockVault (Login)
   - [x] 6.1 Update UnlockVault.tsx dengan UI yang lebih baik
     - Tambahkan animasi dan transisi
     - Perbaiki spacing dan typography
@@ -86,14 +86,14 @@ Implementasi fitur logout, perbaikan tampilan login, dan fitur "Remember Me" unt
     - Test dan perbaiki layout untuk berbagai ukuran layar
     - _Requirements: 2.7_
 
-- [-] 7. Perbaiki tampilan VaultAuth (Landing Page)
+- [x] 7. Perbaiki tampilan VaultAuth (Landing Page)
   - [x] 7.1 Update VaultAuth.tsx dengan desain yang lebih menarik
     - Perbaiki layout dan spacing
     - Tambahkan animasi entrance
     - Perbaiki card design
     - _Requirements: 2.1, 2.3, 2.4_
 
-- [-] 8. Integrasi Logout Button ke aplikasi
+- [x] 8. Integrasi Logout Button ke aplikasi
   - [x] 8.1 Tambahkan LogoutButton ke Sidebar.tsx
     - Tempatkan di footer sidebar
     - _Requirements: 1.5_
