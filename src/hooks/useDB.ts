@@ -1,6 +1,8 @@
-import { useEffect, useCallback, useState } from 'react';
+import { useEffect, useCallback, useState, useRef } from 'react';
 import { db, Note, Notebook, Tag } from '@/lib/db';
 import { useToast } from './use-toast';
+import { useVaultStore } from '@/stores/vaultStore';
+import { decryptNote, encryptNote, type DecryptedNote, type EncryptedNote } from '@/lib/crypto';
 
 /**
  * Custom hook for persisting notes to IndexedDB
@@ -9,6 +11,43 @@ export function useNotesDB() {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
+  const warnedMissingKey = useRef(false);
+  const { encryptionKey, encryptionAlgorithm, isUnlocked, vaultId } = useVaultStore();
+
+  const isEncryptedNote = (note: Note): note is Note & EncryptedNote => {
+    return Boolean(note.encryptedTitle && note.encryptedContent && note.encryptedPreview);
+  };
+
+  const normalizeLegacyNote = useCallback((note: Note): DecryptedNote => ({
+    id: note.id,
+    vaultId: note.vaultId ?? vaultId ?? undefined,
+    title: note.title ?? '',
+    content: note.content ?? '',
+    preview: note.preview ?? note.content?.substring(0, 100) ?? '',
+    createdAt: note.createdAt,
+    updatedAt: note.updatedAt ?? note.createdAt,
+    tags: note.tags ?? [],
+    isFavorite: note.isFavorite ?? false,
+    section: note.section ?? 'notes',
+    notebookId: note.notebookId,
+    order: note.order ?? 0,
+  }), [vaultId]);
+
+  const warnMissingKeyOnce = useCallback(() => {
+    if (warnedMissingKey.current) return;
+    warnedMissingKey.current = true;
+    toast({
+      title: 'Vault terkunci',
+      description: 'Buka vault untuk membaca atau menyimpan catatan terenkripsi.',
+      variant: 'destructive',
+    });
+  }, [toast]);
+
+  useEffect(() => {
+    if (encryptionKey && isUnlocked) {
+      warnedMissingKey.current = false;
+    }
+  }, [encryptionKey, isUnlocked]);
 
   /**
    * Load notes from IndexedDB
@@ -17,7 +56,33 @@ export function useNotesDB() {
     try {
       setIsLoading(true);
       const notes = await db.getAllNotes();
-      return notes;
+
+      if (!encryptionKey || !isUnlocked) {
+        warnMissingKeyOnce();
+        return [];
+      }
+
+      const decryptedNotes = await Promise.all(
+        notes.map(async (note) => {
+          if (vaultId && note.vaultId && note.vaultId !== vaultId) {
+            return null;
+          }
+          if (!isEncryptedNote(note)) {
+            return normalizeLegacyNote(note);
+          }
+          try {
+            const decrypted = await decryptNote(note, encryptionKey, { suppressErrors: true });
+            if (vaultId && decrypted.vaultId && decrypted.vaultId !== vaultId) {
+              return null;
+            }
+            return decrypted.vaultId ? decrypted : { ...decrypted, vaultId };
+          } catch (error) {
+            return null;
+          }
+        })
+      );
+
+      return decryptedNotes.filter((note): note is DecryptedNote => Boolean(note));
     } catch (error) {
       console.error('Error loading notes:', error);
       toast({
@@ -29,18 +94,33 @@ export function useNotesDB() {
     } finally {
       setIsLoading(false);
     }
-  }, [toast]);
+  }, [
+    encryptionKey,
+    isUnlocked,
+    vaultId,
+    toast,
+    warnMissingKeyOnce,
+    normalizeLegacyNote,
+  ]);
 
   /**
    * Save a single note to IndexedDB
    */
   const saveNote = useCallback(async (note: Note) => {
+    if (!encryptionKey || !isUnlocked) {
+      warnMissingKeyOnce();
+      return;
+    }
+
     try {
       setIsSyncing(true);
-      await db.saveNote({
-        ...note,
+      const normalized: DecryptedNote = {
+        ...normalizeLegacyNote(note),
         updatedAt: new Date(),
-      });
+        vaultId: vaultId ?? note.vaultId,
+      };
+      const encrypted = await encryptNote(normalized, encryptionKey, encryptionAlgorithm);
+      await db.saveNote(encrypted);
     } catch (error) {
       console.error('Error saving note:', error);
       toast({
@@ -51,15 +131,36 @@ export function useNotesDB() {
     } finally {
       setIsSyncing(false);
     }
-  }, [toast]);
+  }, [
+    encryptionKey,
+    encryptionAlgorithm,
+    isUnlocked,
+    vaultId,
+    toast,
+    warnMissingKeyOnce,
+    normalizeLegacyNote,
+  ]);
 
   /**
    * Save multiple notes to IndexedDB
    */
   const saveNotes = useCallback(async (notes: Note[]) => {
+    if (!encryptionKey || !isUnlocked) {
+      warnMissingKeyOnce();
+      return;
+    }
+
     try {
       setIsSyncing(true);
-      await db.saveNotes(notes);
+      const normalizedNotes: DecryptedNote[] = notes.map((note) => ({
+        ...normalizeLegacyNote(note),
+        updatedAt: note.updatedAt ?? new Date(),
+        vaultId: vaultId ?? note.vaultId,
+      }));
+      const encryptedNotes = await Promise.all(
+        normalizedNotes.map((note) => encryptNote(note, encryptionKey, encryptionAlgorithm))
+      );
+      await db.saveNotes(encryptedNotes);
     } catch (error) {
       console.error('Error saving notes:', error);
       toast({
@@ -70,7 +171,15 @@ export function useNotesDB() {
     } finally {
       setIsSyncing(false);
     }
-  }, [toast]);
+  }, [
+    encryptionKey,
+    encryptionAlgorithm,
+    isUnlocked,
+    vaultId,
+    toast,
+    warnMissingKeyOnce,
+    normalizeLegacyNote,
+  ]);
 
   /**
    * Delete a note from IndexedDB
@@ -106,19 +215,34 @@ export function useNotesDB() {
  */
 export function useNotebooksDB() {
   const { toast } = useToast();
+  const { vaultId } = useVaultStore();
 
   const loadNotebooks = useCallback(async () => {
     try {
-      return await db.getAllNotebooks();
+      const notebooks = await db.getAllNotebooks();
+      if (!vaultId) {
+        return notebooks;
+      }
+      const legacy = notebooks.filter((notebook) => !notebook.vaultId);
+      if (legacy.length > 0) {
+        await Promise.all(
+          legacy.map((notebook) => db.saveNotebook({ ...notebook, vaultId }))
+        );
+      }
+      const scoped = notebooks.map((notebook) => (
+        notebook.vaultId ? notebook : { ...notebook, vaultId }
+      ));
+      return scoped.filter((notebook) => notebook.vaultId === vaultId);
     } catch (error) {
       console.error('Error loading notebooks:', error);
       return [];
     }
-  }, []);
+  }, [vaultId]);
 
   const saveNotebook = useCallback(async (notebook: Notebook) => {
     try {
-      await db.saveNotebook(notebook);
+      const record = vaultId ? { ...notebook, vaultId } : notebook;
+      await db.saveNotebook(record);
     } catch (error) {
       console.error('Error saving notebook:', error);
       toast({
@@ -127,7 +251,7 @@ export function useNotebooksDB() {
         variant: 'destructive',
       });
     }
-  }, [toast]);
+  }, [toast, vaultId]);
 
   const deleteNotebook = useCallback(async (id: string) => {
     try {
@@ -154,19 +278,34 @@ export function useNotebooksDB() {
  */
 export function useTagsDB() {
   const { toast } = useToast();
+  const { vaultId } = useVaultStore();
 
   const loadTags = useCallback(async () => {
     try {
-      return await db.getAllTags();
+      const tags = await db.getAllTags();
+      if (!vaultId) {
+        return tags;
+      }
+      const legacy = tags.filter((tag) => !tag.vaultId);
+      if (legacy.length > 0) {
+        await Promise.all(
+          legacy.map((tag) => db.saveTag({ ...tag, vaultId }))
+        );
+      }
+      const scoped = tags.map((tag) => (
+        tag.vaultId ? tag : { ...tag, vaultId }
+      ));
+      return scoped.filter((tag) => tag.vaultId === vaultId);
     } catch (error) {
       console.error('Error loading tags:', error);
       return [];
     }
-  }, []);
+  }, [vaultId]);
 
   const saveTag = useCallback(async (tag: Tag) => {
     try {
-      await db.saveTag(tag);
+      const record = vaultId ? { ...tag, vaultId } : tag;
+      await db.saveTag(record);
     } catch (error) {
       console.error('Error saving tag:', error);
       toast({
@@ -175,7 +314,7 @@ export function useTagsDB() {
         variant: 'destructive',
       });
     }
-  }, [toast]);
+  }, [toast, vaultId]);
 
   const deleteTag = useCallback(async (id: string) => {
     try {

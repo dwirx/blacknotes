@@ -3,6 +3,8 @@
  * Provides persistent storage for notes, notebooks, and tags
  */
 
+import type { EncryptionAlgorithm } from '@/lib/crypto';
+
 const DB_NAME = 'HadesNotesDB';
 const DB_VERSION = 1;
 
@@ -16,9 +18,14 @@ const STORES = {
 
 export interface Note {
   id: string;
-  title: string;
-  content: string;
-  preview: string;
+  vaultId?: string;
+  title?: string;
+  content?: string;
+  preview?: string;
+  encryptedTitle?: string;
+  encryptedContent?: string;
+  encryptedPreview?: string;
+  algorithm?: EncryptionAlgorithm;
   createdAt: Date;
   updatedAt: Date;
   tags: string[];
@@ -30,6 +37,7 @@ export interface Note {
 
 export interface Notebook {
   id: string;
+  vaultId?: string;
   name: string;
   noteCount: number;
   createdAt: Date;
@@ -37,6 +45,7 @@ export interface Notebook {
 
 export interface Tag {
   id: string;
+  vaultId?: string;
   name: string;
   noteCount: number;
   createdAt: Date;
@@ -202,7 +211,7 @@ class IndexedDBService {
     return notes.map(note => ({
       ...note,
       createdAt: new Date(note.createdAt),
-      updatedAt: new Date(note.updatedAt),
+      updatedAt: new Date(note.updatedAt ?? note.createdAt),
     }));
   }
 
@@ -309,7 +318,8 @@ class IndexedDBService {
       notebooksCount: notebooks.length,
       tagsCount: tags.length,
       totalWords: notes.reduce((acc, note) => {
-        const words = note.content.replace(/<[^>]*>/g, '').trim().split(/\s+/).filter(Boolean).length;
+        const content = note.content ?? '';
+        const words = content.replace(/<[^>]*>/g, '').trim().split(/\s+/).filter(Boolean).length;
         return acc + words;
       }, 0),
     };
@@ -384,6 +394,35 @@ class IndexedDBService {
       this.clear(STORES.SETTINGS),
     ]);
     console.log('🗑️ All data cleared');
+  }
+
+  /**
+   * Clear vault-specific data (notes, notebooks, tags)
+   */
+  async clearVaultData(vaultId?: string): Promise<void> {
+    if (!vaultId) {
+      await Promise.all([
+        this.clearNotes(),
+        this.clear(STORES.NOTEBOOKS),
+        this.clear(STORES.TAGS),
+      ]);
+      console.log('🧹 Vault data cleared');
+      return;
+    }
+
+    const [notes, notebooks, tags] = await Promise.all([
+      this.getAllNotes(),
+      this.getAllNotebooks(),
+      this.getAllTags(),
+    ]);
+
+    await Promise.all([
+      ...notes.filter((note) => note.vaultId === vaultId).map((note) => this.delete(STORES.NOTES, note.id)),
+      ...notebooks.filter((notebook) => notebook.vaultId === vaultId).map((notebook) => this.delete(STORES.NOTEBOOKS, notebook.id)),
+      ...tags.filter((tag) => tag.vaultId === vaultId).map((tag) => this.delete(STORES.TAGS, tag.id)),
+    ]);
+
+    console.log('🧹 Vault data cleared');
   }
 }
 

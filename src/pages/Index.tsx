@@ -1,4 +1,5 @@
 import { useState, useCallback, useMemo, useEffect } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import { useDebounce } from "@/hooks/useDebounce";
 import { useNotesDB, useNotebooksDB, useTagsDB } from "@/hooks/useDB";
 import { Sidebar } from "@/components/Sidebar";
@@ -30,6 +31,7 @@ import {
   BookOpen
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useVaultStore } from "@/stores/vaultStore";
 import {
   ResizableHandle,
   ResizablePanel,
@@ -40,6 +42,7 @@ type SidebarTab = "home" | "notebooks" | "tags";
 
 interface Note {
   id: string;
+  vaultId?: string;
   title: string;
   content: string;
   preview: string;
@@ -54,6 +57,7 @@ interface Note {
 
 interface Notebook {
   id: string;
+  vaultId?: string;
   name: string;
   noteCount: number;
   createdAt?: Date;
@@ -61,6 +65,7 @@ interface Notebook {
 
 interface Tag {
   id: string;
+  vaultId?: string;
   name: string;
   noteCount: number;
   createdAt?: Date;
@@ -79,6 +84,9 @@ const Index = () => {
   const [notesListOpen, setNotesListOpen] = useState(true);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [notesListCollapsed, setNotesListCollapsed] = useState(false);
+  const [notesLoaded, setNotesLoaded] = useState(false);
+  const navigate = useNavigate();
+  const { noteId } = useParams<{ noteId?: string }>();
   
   // Notebooks state
   const [notebooks, setNotebooks] = useState<Notebook[]>([]);
@@ -89,6 +97,18 @@ const Index = () => {
   const [selectedTagId, setSelectedTagId] = useState<string | null>(null);
   
   const { toast } = useToast();
+  const { vaultId } = useVaultStore();
+
+  const navigateToNote = useCallback(
+    (targetNoteId: string | null, options?: { replace?: boolean }) => {
+      if (targetNoteId) {
+        navigate(`/vault/note/${targetNoteId}`, { replace: options?.replace ?? false });
+        return;
+      }
+      navigate('/', { replace: options?.replace ?? false });
+    },
+    [navigate]
+  );
 
   // IndexedDB hooks
   const { loadNotes, saveNote, saveNotes, deleteNote: deleteNoteFromDB, isLoading, isSyncing } = useNotesDB();
@@ -99,33 +119,29 @@ const Index = () => {
   useEffect(() => {
     const loadData = async () => {
       try {
+        setNotesLoaded(false);
         const [loadedNotes, loadedNotebooks, loadedTags] = await Promise.all([
           loadNotes(),
           loadNotebooks(),
           loadTags(),
         ]);
 
-        if (loadedNotes.length > 0) {
-          setNotes(loadedNotes);
-          console.log(`✅ Loaded ${loadedNotes.length} notes from IndexedDB`);
-        }
+        setNotes(loadedNotes);
+        setNotebooks(loadedNotebooks);
+        setAllTags(loadedTags);
 
-        if (loadedNotebooks.length > 0) {
-          setNotebooks(loadedNotebooks);
-          console.log(`✅ Loaded ${loadedNotebooks.length} notebooks from IndexedDB`);
-        }
-
-        if (loadedTags.length > 0) {
-          setAllTags(loadedTags);
-          console.log(`✅ Loaded ${loadedTags.length} tags from IndexedDB`);
-        }
+        console.log(`✅ Loaded ${loadedNotes.length} notes from IndexedDB`);
+        console.log(`✅ Loaded ${loadedNotebooks.length} notebooks from IndexedDB`);
+        console.log(`✅ Loaded ${loadedTags.length} tags from IndexedDB`);
       } catch (error) {
         console.error('Error loading data:', error);
+      } finally {
+        setNotesLoaded(true);
       }
     };
 
     loadData();
-  }, []);
+  }, [loadNotes, loadNotebooks, loadTags]);
 
   // Auto-save notes to IndexedDB when they change
   useEffect(() => {
@@ -197,6 +213,7 @@ const Index = () => {
   const handleAddNote = useCallback(() => {
     const newNote: Note = {
       id: crypto.randomUUID(),
+      vaultId: vaultId ?? undefined,
       title: "",
       content: "",
       preview: "",
@@ -223,6 +240,8 @@ const Index = () => {
     // Add to history
     setNoteHistory(prev => [...prev.slice(0, historyIndex + 1), newNote.id]);
     setHistoryIndex(prev => prev + 1);
+
+    navigateToNote(newNote.id);
     
     // On mobile, close notes list when opening editor
     if (window.innerWidth < 768) {
@@ -232,7 +251,7 @@ const Index = () => {
       title: "Note created",
       description: "New note has been created successfully.",
     });
-  }, [activeSection, toast, historyIndex]);
+  }, [activeSection, toast, historyIndex, navigateToNote, vaultId]);
 
   const handleNoteChange = useCallback((updatedNote: { id: string; title: string; content: string; tags: string[] }) => {
     setNotes((prev) =>
@@ -266,6 +285,7 @@ const Index = () => {
       setOpenNotes((prev) => prev.filter((n) => n.id !== noteId));
       if (selectedNoteId === noteId) {
         setSelectedNoteId(null);
+        navigateToNote(null, { replace: true });
       }
       toast({
         title: "Note deleted permanently",
@@ -279,13 +299,14 @@ const Index = () => {
       );
       if (selectedNoteId === noteId) {
         setSelectedNoteId(null);
+        navigateToNote(null, { replace: true });
       }
       toast({
         title: "Note moved to trash",
         description: "The note has been moved to trash.",
       });
     }
-  }, [notes, selectedNoteId, toast]);
+  }, [notes, selectedNoteId, toast, navigateToNote]);
 
   const handleRestoreNote = useCallback((noteId: string) => {
     setNotes((prev) =>
@@ -315,44 +336,86 @@ const Index = () => {
     );
     if (selectedNoteId === noteId) {
       setSelectedNoteId(null);
+      navigateToNote(null, { replace: true });
     }
     toast({
       title: "Note archived",
       description: "The note has been moved to archive.",
     });
-  }, [selectedNoteId, toast]);
+  }, [selectedNoteId, toast, navigateToNote]);
 
   const handleCloseNote = useCallback(() => {
     setSelectedNoteId(null);
+    navigateToNote(null);
     // On mobile, show notes list when closing editor
     if (window.innerWidth < 768) {
       setNotesListOpen(true);
     }
-  }, []);
+  }, [navigateToNote]);
 
-  const handleNoteSelect = useCallback((noteId: string) => {
-    setSelectedNoteId(noteId);
-    
-    // Find the note for title
-    const note = notes.find(n => n.id === noteId);
-    
-    // Add to open tabs if not already open
-    setOpenNotes((prev) => {
-      if (!prev.find(n => n.id === noteId)) {
-        return [...prev, { id: noteId, title: note?.title || "Untitled" }];
+  const handleNoteSelect = useCallback(
+    (noteId: string, options?: { skipNavigation?: boolean; skipHistory?: boolean }) => {
+      setSelectedNoteId(noteId);
+      
+      // Find the note for title
+      const note = notes.find(n => n.id === noteId);
+      
+      // Add to open tabs if not already open
+      setOpenNotes((prev) => {
+        if (!prev.find(n => n.id === noteId)) {
+          return [...prev, { id: noteId, title: note?.title || "Untitled" }];
+        }
+        return prev;
+      });
+      
+      // Add to history
+      if (!options?.skipHistory) {
+        setNoteHistory(prev => [...prev.slice(0, historyIndex + 1), noteId]);
+        setHistoryIndex(prev => prev + 1);
       }
-      return prev;
-    });
-    
-    // Add to history
-    setNoteHistory(prev => [...prev.slice(0, historyIndex + 1), noteId]);
-    setHistoryIndex(prev => prev + 1);
-    
-    // On mobile, close notes list when selecting a note
-    if (window.innerWidth < 768) {
-      setNotesListOpen(false);
+
+      if (!options?.skipNavigation) {
+        navigateToNote(noteId);
+      }
+      
+      // On mobile, close notes list when selecting a note
+      if (window.innerWidth < 768) {
+        setNotesListOpen(false);
+      }
+    },
+    [notes, historyIndex, navigateToNote]
+  );
+
+  // Open note from URL param when available
+  useEffect(() => {
+    if (!noteId || !notesLoaded) {
+      return;
     }
-  }, [notes, historyIndex]);
+
+    const noteExists = notes.some((note) => note.id === noteId);
+    if (!noteExists) {
+      if (notes.length > 0) {
+        toast({
+          title: "Catatan tidak tersedia",
+          description: "Catatan ini tidak ada di vault ini atau sudah dihapus.",
+          variant: "destructive",
+        });
+      }
+      navigateToNote(null, { replace: true });
+      return;
+    }
+
+    if (selectedNoteId !== noteId) {
+      handleNoteSelect(noteId, { skipNavigation: true });
+    }
+  }, [noteId, notesLoaded, notes, selectedNoteId, toast, handleNoteSelect, navigateToNote]);
+
+  // Clear selection when returning to root route
+  useEffect(() => {
+    if (noteId || !selectedNoteId) return;
+    setSelectedNoteId(null);
+    setNotesListOpen(true);
+  }, [noteId, selectedNoteId]);
 
   const handleSectionChange = useCallback((section: string) => {
     setActiveSection(section);
@@ -365,28 +428,35 @@ const Index = () => {
       // Select the previous tab or null
       const remainingNotes = openNotes.filter(n => n.id !== noteId);
       if (remainingNotes.length > 0) {
-        setSelectedNoteId(remainingNotes[remainingNotes.length - 1].id);
+        const nextId = remainingNotes[remainingNotes.length - 1].id;
+        setSelectedNoteId(nextId);
+        navigateToNote(nextId, { replace: true });
       } else {
         setSelectedNoteId(null);
+        navigateToNote(null, { replace: true });
       }
     }
-  }, [openNotes, selectedNoteId]);
+  }, [openNotes, selectedNoteId, navigateToNote]);
 
   const handleNavigateBack = useCallback(() => {
     if (historyIndex > 0) {
       const newIndex = historyIndex - 1;
       setHistoryIndex(newIndex);
-      setSelectedNoteId(noteHistory[newIndex]);
+      const nextId = noteHistory[newIndex];
+      setSelectedNoteId(nextId);
+      navigateToNote(nextId, { replace: true });
     }
-  }, [historyIndex, noteHistory]);
+  }, [historyIndex, noteHistory, navigateToNote]);
 
   const handleNavigateForward = useCallback(() => {
     if (historyIndex < noteHistory.length - 1) {
       const newIndex = historyIndex + 1;
       setHistoryIndex(newIndex);
-      setSelectedNoteId(noteHistory[newIndex]);
+      const nextId = noteHistory[newIndex];
+      setSelectedNoteId(nextId);
+      navigateToNote(nextId, { replace: true });
     }
-  }, [historyIndex, noteHistory]);
+  }, [historyIndex, noteHistory, navigateToNote]);
 
   // Notebook handlers
   const handleAddNotebook = useCallback(() => {
@@ -394,6 +464,7 @@ const Index = () => {
     if (name) {
       const newNotebook: Notebook = {
         id: crypto.randomUUID(),
+        vaultId: vaultId ?? undefined,
         name,
         noteCount: 0,
       };
@@ -403,7 +474,7 @@ const Index = () => {
         description: `"${name}" has been created.`,
       });
     }
-  }, [toast]);
+  }, [toast, vaultId]);
 
   const handleDeleteNotebook = useCallback((notebookId: string) => {
     setNotebooks((prev) => prev.filter((n) => n.id !== notebookId));
@@ -434,6 +505,7 @@ const Index = () => {
     if (name) {
       const newTag: Tag = {
         id: crypto.randomUUID(),
+        vaultId: vaultId ?? undefined,
         name,
         noteCount: 0,
       };
@@ -443,7 +515,7 @@ const Index = () => {
         description: `"${name}" has been created.`,
       });
     }
-  }, [toast]);
+  }, [toast, vaultId]);
 
   const handleDeleteTag = useCallback((tagId: string) => {
     setAllTags((prev) => prev.filter((t) => t.id !== tagId));
@@ -771,7 +843,10 @@ const Index = () => {
                   onClose={handleCloseNote}
                   onToggleFavorite={handleToggleFavorite}
                   onDelete={handleDeleteNote}
-                  onBack={() => setNotesListOpen(true)}
+                  onBack={() => {
+                    setNotesListOpen(true);
+                    navigateToNote(null);
+                  }}
                   onAddNote={handleAddNote}
                 />
               </div>
@@ -837,6 +912,7 @@ const Index = () => {
               onBack={() => {
                 setSelectedNoteId(null);
                 setNotesListOpen(true);
+                navigateToNote(null);
               }}
               onAddNote={handleAddNote}
             />

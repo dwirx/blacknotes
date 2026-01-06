@@ -95,7 +95,11 @@ async function encryptAES256GCM(data: string, key: Uint8Array): Promise<string> 
 /**
  * Decrypt data using AES-256-GCM
  */
-async function decryptAES256GCM(encryptedData: string, key: Uint8Array): Promise<string | null> {
+async function decryptAES256GCM(
+  encryptedData: string,
+  key: Uint8Array,
+  options?: { suppressErrors?: boolean }
+): Promise<string | null> {
   try {
     const combined = decodeBase64(encryptedData);
 
@@ -122,7 +126,9 @@ async function decryptAES256GCM(encryptedData: string, key: Uint8Array): Promise
     const decoder = new TextDecoder();
     return decoder.decode(decrypted);
   } catch (error) {
-    console.error('AES-GCM decryption error:', error);
+    if (!options?.suppressErrors) {
+      console.error('AES-GCM decryption error:', error);
+    }
     return null;
   }
 }
@@ -146,7 +152,11 @@ function encryptChaCha20(data: string, key: Uint8Array): string {
 /**
  * Decrypt data using ChaCha20-Poly1305
  */
-function decryptChaCha20(encryptedData: string, key: Uint8Array): string | null {
+function decryptChaCha20(
+  encryptedData: string,
+  key: Uint8Array,
+  options?: { suppressErrors?: boolean }
+): string | null {
   try {
     const fullMessage = decodeBase64(encryptedData);
 
@@ -163,7 +173,9 @@ function decryptChaCha20(encryptedData: string, key: Uint8Array): string | null 
 
     return decodeUTF8(decrypted);
   } catch (error) {
-    console.error('ChaCha20 decryption error:', error);
+    if (!options?.suppressErrors) {
+      console.error('ChaCha20 decryption error:', error);
+    }
     return null;
   }
 }
@@ -192,13 +204,14 @@ export async function encryptData(
 export async function decryptData(
   encryptedData: string,
   key: Uint8Array,
-  algorithm: EncryptionAlgorithm = DEFAULT_ALGORITHM
+  algorithm: EncryptionAlgorithm = DEFAULT_ALGORITHM,
+  options?: { suppressErrors?: boolean }
 ): Promise<string | null> {
   switch (algorithm) {
     case 'aes-256-gcm':
-      return await decryptAES256GCM(encryptedData, key);
+      return await decryptAES256GCM(encryptedData, key, options);
     case 'chacha20-poly1305':
-      return decryptChaCha20(encryptedData, key);
+      return decryptChaCha20(encryptedData, key, options);
     default:
       throw new Error(`Unsupported algorithm: ${algorithm}`);
   }
@@ -221,6 +234,7 @@ export async function hashMnemonic(mnemonic: string): Promise<string> {
  */
 export interface EncryptedNote {
   id: string;
+  vaultId?: string;
   encryptedTitle: string;
   encryptedContent: string;
   encryptedPreview: string;
@@ -236,6 +250,7 @@ export interface EncryptedNote {
 
 export interface DecryptedNote {
   id: string;
+  vaultId?: string;
   title: string;
   content: string;
   preview: string;
@@ -255,7 +270,15 @@ export async function encryptNote(
   algorithm: EncryptionAlgorithm = DEFAULT_ALGORITHM
 ): Promise<EncryptedNote> {
   return {
-    ...note,
+    id: note.id,
+    vaultId: note.vaultId,
+    createdAt: note.createdAt,
+    updatedAt: note.updatedAt,
+    tags: note.tags,
+    isFavorite: note.isFavorite,
+    section: note.section,
+    notebookId: note.notebookId,
+    order: note.order,
     encryptedTitle: await encryptData(note.title, key, algorithm),
     encryptedContent: await encryptData(note.content, key, algorithm),
     encryptedPreview: await encryptData(note.preview, key, algorithm),
@@ -266,22 +289,35 @@ export async function encryptNote(
 /**
  * Decrypt note content
  */
-export async function decryptNote(encryptedNote: EncryptedNote, key: Uint8Array): Promise<DecryptedNote> {
+export async function decryptNote(
+  encryptedNote: EncryptedNote,
+  key: Uint8Array,
+  options?: { suppressErrors?: boolean }
+): Promise<DecryptedNote> {
   const algorithm = encryptedNote.algorithm || DEFAULT_ALGORITHM;
 
-  const title = await decryptData(encryptedNote.encryptedTitle, key, algorithm);
-  const content = await decryptData(encryptedNote.encryptedContent, key, algorithm);
-  const preview = await decryptData(encryptedNote.encryptedPreview, key, algorithm);
+  const title = await decryptData(encryptedNote.encryptedTitle, key, algorithm, options);
+  const content = await decryptData(encryptedNote.encryptedContent, key, algorithm, options);
+  const preview = await decryptData(encryptedNote.encryptedPreview, key, algorithm, options);
 
   if (!title || !content || !preview) {
     throw new Error('Failed to decrypt note');
   }
 
   return {
-    ...encryptedNote,
+    id: encryptedNote.id,
+    vaultId: encryptedNote.vaultId,
     title,
     content,
     preview,
+    algorithm,
+    createdAt: encryptedNote.createdAt,
+    updatedAt: encryptedNote.updatedAt,
+    tags: encryptedNote.tags,
+    isFavorite: encryptedNote.isFavorite,
+    section: encryptedNote.section,
+    notebookId: encryptedNote.notebookId,
+    order: encryptedNote.order,
   };
 }
 

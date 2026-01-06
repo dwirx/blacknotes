@@ -33,7 +33,7 @@ import {
   restoreVaultBackup,
   BackupPreview,
 } from '@/lib/crypto';
-import { db } from '@/lib/db';
+import { db, type Note, type Notebook, type Tag } from '@/lib/db';
 import { cn } from '@/lib/utils';
 
 // LocalStorage keys
@@ -174,10 +174,15 @@ export const VaultSettings = memo(({ onVaultDeleted }: VaultSettingsProps) => {
         db.getAllTags(),
         db.getSettings(),
       ]);
+      const scopedNotes = vaultId ? notes.filter((note) => note.vaultId === vaultId) : notes;
+      const scopedNotebooks = vaultId
+        ? notebooks.filter((notebook) => notebook.vaultId === vaultId)
+        : notebooks;
+      const scopedTags = vaultId ? tags.filter((tag) => tag.vaultId === vaultId) : tags;
 
       // Create encrypted backup
       const backup = await createVaultBackup(
-        { notes: notes as unknown[], notebooks, tags, settings },
+        { notes: scopedNotes as unknown[], notebooks: scopedNotebooks, tags: scopedTags, settings },
         encryptionKey,
         vaultId,
         encryptionAlgorithm
@@ -248,7 +253,7 @@ export const VaultSettings = memo(({ onVaultDeleted }: VaultSettingsProps) => {
 
   // Restore backup handler
   const handleRestoreBackup = useCallback(async () => {
-    if (!pendingBackupFile || !encryptionKey) return;
+    if (!pendingBackupFile || !encryptionKey || !vaultId) return;
 
     setIsProcessing(true);
     try {
@@ -259,16 +264,29 @@ export const VaultSettings = memo(({ onVaultDeleted }: VaultSettingsProps) => {
         throw new Error('Failed to decrypt backup');
       }
 
-      // Clear existing data and import backup
-      await db.clearAll();
-      await db.importData({ 
-        data: {
-          notes: data.notes as unknown[],
-          notebooks: data.notebooks as unknown[],
-          tags: data.tags as unknown[],
-          settings: data.settings as Record<string, unknown>,
+      // Clear existing vault data and import backup
+      await db.clearVaultData(vaultId);
+
+      if (data.notes && data.notes.length > 0) {
+        const scopedNotes = data.notes.map((note) => ({
+          ...note,
+          vaultId: note.vaultId ?? vaultId,
+        }));
+        await db.saveNotes(scopedNotes as unknown as Note[]);
+      }
+      if (data.notebooks && data.notebooks.length > 0) {
+        for (const notebook of data.notebooks as unknown[]) {
+          await db.saveNotebook({ ...notebook, vaultId } as unknown as Notebook);
         }
-      });
+      }
+      if (data.tags && data.tags.length > 0) {
+        for (const tag of data.tags as unknown[]) {
+          await db.saveTag({ ...tag, vaultId } as unknown as Tag);
+        }
+      }
+      if (data.settings) {
+        await db.saveSettings(data.settings as Record<string, unknown>);
+      }
 
       toast({
         title: 'Backup Restored',
@@ -288,7 +306,7 @@ export const VaultSettings = memo(({ onVaultDeleted }: VaultSettingsProps) => {
       setBackupPreview(null);
       setPendingBackupFile(null);
     }
-  }, [pendingBackupFile, encryptionKey, backupPreview, toast]);
+  }, [pendingBackupFile, encryptionKey, vaultId, backupPreview, toast]);
 
   // Delete account handler
   const handleDeleteAccount = useCallback(async () => {

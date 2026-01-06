@@ -22,6 +22,7 @@ export interface SessionToken {
   createdAt: number;
   expiresAt: number;
   vaultId: string;
+  algorithm?: EncryptionAlgorithm;
   version: string;
 }
 
@@ -29,6 +30,14 @@ export interface SessionToken {
 export interface RememberMeSettings {
   enabled: boolean;
   duration: 7 | 30 | -1; // days, -1 = until logout
+}
+
+export interface VaultMetadata {
+  vaultId: string;
+  vaultHash: string;
+  encryptionAlgorithm: EncryptionAlgorithm;
+  createdAt: number;
+  lastUsedAt: number;
 }
 
 // Storage keys
@@ -42,6 +51,7 @@ export interface VaultState {
   vaultId: string | null;
   vaultHash: string | null;
   encryptionAlgorithm: EncryptionAlgorithm;
+  vaults: VaultMetadata[];
 
   // Encryption key (in memory only, never persisted)
   encryptionKey: Uint8Array | null;
@@ -104,6 +114,33 @@ function getStoredSessionKey(): Uint8Array | null {
   }
 }
 
+function upsertVault(vaults: VaultMetadata[], next: VaultMetadata): VaultMetadata[] {
+  const index = vaults.findIndex((vault) => vault.vaultId === next.vaultId);
+  if (index === -1) {
+    return [...vaults, next];
+  }
+  return vaults.map((vault, i) => (i === index ? { ...vault, ...next } : vault));
+}
+
+function ensureVaults(state: VaultState): VaultMetadata[] {
+  if (state.vaults.length > 0) {
+    return state.vaults;
+  }
+  if (state.vaultId && state.vaultHash) {
+    const now = Date.now();
+    return [
+      {
+        vaultId: state.vaultId,
+        vaultHash: state.vaultHash,
+        encryptionAlgorithm: state.encryptionAlgorithm,
+        createdAt: now,
+        lastUsedAt: now,
+      },
+    ];
+  }
+  return [];
+}
+
 export const useVaultStore = create<VaultState>()(
   persist(
     (set, get) => ({
@@ -114,6 +151,7 @@ export const useVaultStore = create<VaultState>()(
       vaultHash: null,
       encryptionKey: null,
       encryptionAlgorithm: DEFAULT_ALGORITHM,
+      vaults: [],
       currentMnemonic: null,
       rememberMeSettings: {
         enabled: false,
@@ -134,6 +172,16 @@ export const useVaultStore = create<VaultState>()(
           const key = await deriveKeyFromMnemonic(mnemonic);
           const vaultHash = await hashMnemonic(mnemonic);
           const vaultId = await generateVaultId(mnemonic);
+          const now = Date.now();
+          const algorithmToUse = algorithm || DEFAULT_ALGORITHM;
+          const vaults = ensureVaults(get());
+          const updatedVaults = upsertVault(vaults, {
+            vaultId,
+            vaultHash,
+            encryptionAlgorithm: algorithmToUse,
+            createdAt: now,
+            lastUsedAt: now,
+          });
 
           set({
             isVaultCreated: true,
@@ -141,7 +189,8 @@ export const useVaultStore = create<VaultState>()(
             vaultId,
             vaultHash,
             encryptionKey: key,
-            encryptionAlgorithm: algorithm || DEFAULT_ALGORITHM,
+            encryptionAlgorithm: algorithmToUse,
+            vaults: updatedVaults,
             currentMnemonic: mnemonic,
           });
 
@@ -160,26 +209,34 @@ export const useVaultStore = create<VaultState>()(
         try {
           const state = get();
 
-          if (!state.isVaultCreated) {
-            console.error('No vault exists');
-            return false;
-          }
-
           if (!validateMnemonic(mnemonic)) {
             console.error('Invalid mnemonic');
             return false;
           }
 
           const inputHash = await hashMnemonic(mnemonic);
-          if (inputHash !== state.vaultHash) {
-            console.error('Mnemonic does not match vault');
-            return false;
-          }
+          const vaultId = await generateVaultId(mnemonic);
+          const existingVaults = ensureVaults(state);
+          const existing = existingVaults.find((vault) => vault.vaultHash === inputHash);
 
           const key = await deriveKeyFromMnemonic(mnemonic);
+          const now = Date.now();
+          const algorithmToUse = existing?.encryptionAlgorithm ?? state.encryptionAlgorithm ?? DEFAULT_ALGORITHM;
+          const updatedVaults = upsertVault(existingVaults, {
+            vaultId: existing?.vaultId ?? vaultId,
+            vaultHash: existing?.vaultHash ?? inputHash,
+            encryptionAlgorithm: algorithmToUse,
+            createdAt: existing?.createdAt ?? now,
+            lastUsedAt: now,
+          });
 
           set({
             isUnlocked: true,
+            isVaultCreated: true,
+            vaultId: existing?.vaultId ?? vaultId,
+            vaultHash: existing?.vaultHash ?? inputHash,
+            encryptionAlgorithm: algorithmToUse,
+            vaults: updatedVaults,
             encryptionKey: key,
             currentMnemonic: mnemonic,
           });
@@ -229,6 +286,7 @@ export const useVaultStore = create<VaultState>()(
           encryptionKey: null,
           currentMnemonic: null,
           encryptionAlgorithm: DEFAULT_ALGORITHM,
+          vaults: [],
           rememberMeSettings: { enabled: false, duration: 7 },
         });
         console.log('🗑️ Vault destroyed');
@@ -238,7 +296,20 @@ export const useVaultStore = create<VaultState>()(
        * Set encryption algorithm preference
        */
       setEncryptionAlgorithm: (algorithm: EncryptionAlgorithm) => {
-        set({ encryptionAlgorithm: algorithm });
+        const state = get();
+        const vaults = ensureVaults(state);
+        const updatedVaults =
+          state.vaultId && state.vaultHash
+            ? upsertVault(vaults, {
+                vaultId: state.vaultId,
+                vaultHash: state.vaultHash,
+                encryptionAlgorithm: algorithm,
+                createdAt: Date.now(),
+                lastUsedAt: Date.now(),
+              })
+            : vaults;
+
+        set({ encryptionAlgorithm: algorithm, vaults: updatedVaults });
       },
 
       /**
@@ -298,6 +369,7 @@ export const useVaultStore = create<VaultState>()(
             createdAt: now,
             expiresAt,
             vaultId: state.vaultId,
+            algorithm: state.encryptionAlgorithm,
             version: '1.0',
           };
 
@@ -333,10 +405,6 @@ export const useVaultStore = create<VaultState>()(
       autoUnlockWithToken: async () => {
         const state = get();
         
-        if (!state.isVaultCreated) {
-          return false;
-        }
-
         try {
           const tokenStr = localStorage.getItem(SESSION_TOKEN_KEY);
           if (!tokenStr) {
@@ -345,13 +413,6 @@ export const useVaultStore = create<VaultState>()(
 
           const token: SessionToken = JSON.parse(tokenStr);
           
-          // Validate token
-          if (token.vaultId !== state.vaultId) {
-            console.error('Token vault ID mismatch');
-            get().clearSessionToken();
-            return false;
-          }
-
           // Check expiration
           if (Date.now() > token.expiresAt) {
             console.log('Session token expired');
@@ -367,11 +428,16 @@ export const useVaultStore = create<VaultState>()(
             return false;
           }
 
+          const existingVaults = ensureVaults(state);
+          const vaultFromToken = existingVaults.find((vault) => vault.vaultId === token.vaultId);
+          const algorithmToUse = token.algorithm ?? vaultFromToken?.encryptionAlgorithm ?? state.encryptionAlgorithm ?? DEFAULT_ALGORITHM;
+
           // Decrypt mnemonic
           const mnemonic = await decryptData(
             token.encryptedMnemonic,
             sessionKey,
-            state.encryptionAlgorithm
+            algorithmToUse,
+            { suppressErrors: true }
           );
 
           if (!mnemonic) {
@@ -425,6 +491,7 @@ export const useVaultStore = create<VaultState>()(
         vaultId: state.vaultId,
         vaultHash: state.vaultHash,
         encryptionAlgorithm: state.encryptionAlgorithm,
+        vaults: state.vaults,
         rememberMeSettings: state.rememberMeSettings,
       }),
     }
